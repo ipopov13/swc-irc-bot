@@ -7,7 +7,6 @@ channel='#safari-testing'
 botnick='safari_guide'
 botpass='eaten-b4-li0nes'
 botmail='loki@mail.bg'
-quitmessage='Expedition requests are suspended at this time!'
 
 def parse(buff):
     message=buff.split('\r\n',1)[0]
@@ -37,7 +36,6 @@ def parse(buff):
     elif "PRIVMSG %s" %(botnick) in message:
         if message.startswith(':'+owner):
             if '!shut_down' in message:
-                irc.send("QUIT :%s" %(quitmessage))
                 return "!shut_down"
             else:
                 print message

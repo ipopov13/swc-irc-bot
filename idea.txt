@@ -1,0 +1,49 @@
+Planetary safari/hunting service
+
+Players can pay for specific planetary hunting tours and receive a code that they pass to the channel bot to initiate the trip. Most trips require several participants as they are more difficult/dangerous. Codes are player specific, not nick specific, so even with a changed nick a player can join the hunt they paid for. A code can be used to enter only one party member to prevent cheating.
+
+Trip details (chosen in that order):
+PLANET - defines possible QUARRY, TERRAINs, EVENTS. Impacts DIFFICULTY.
+QUARRY - specific animal to be hunted. Has requirements for FIREPOWER, STEALTH, and TRACKING. Impacts DIFFICULTY. Defines encountered TERRAIN.
+
+Secondary details:
+DIFFICULTY - based on QUARRY, recommended number of party members.
+TERRAIN - depending on both PLANET and QUARRY.
+QUARRY_CHANCE - based on QUARRY and PLANET, chance for a quarry encounter at every step.
+
+Specific EVENTS (those can give items that impact the trip and party variables, may even be required; when a party event is failed a random player is tested for injury; when a personal difficulty event is failed every failing player is tested for injury):
+PLANETARY - based on the specific planet, have flavour for the specific world.
+TERRAIN - difficulties presented by the TERRAIN type, generic.
+QUARRY - initial events with the QUARRY chosen. Success decreases DISTANCE, failure decreases/increases it based on the QUARRY's AGGRESSIVENESS. When DISTANCE is lower than the party's TRACKING this turns into the final confrontation.
+OTHER - encounters with other possible quarries that match the current PLANET and TERRAIN.
+
+PLAYER properties (used to succeed/survive in EVENTS; individual min/max scores are 1 to 10;races have different bonuses):
+FIREPOWER - for direct confrontation EVENTS and taking down heavy prey. Party sum. Modifier 3.
+STEALTH - to avoid danger or close the distance to the QUARRY. Party min. Modifier 2.
+TRACKING - impacts chance to find the QUARRY, lowering its DISTANCE property with every successful QUARRY event. Party max. HARD TO MAX OUT! Modifier 2.
+SUPPLIES - allows a certain amount of events to happen before the expedition has to go back. Party average.
+RESILIENCE - determines the chance for a player to be injured so much that they cannot continue, ending the trip. Personal. Modifier 2.
+
+PLANET properties:
+PLANET_FREQ - chance to find this particular QUARRY on this particular PLANET. 0 to 1.
+PLANET_DIFFICULTY - recommended party size for PLANETARY and TERRAIN events.
+
+QUARRY properties:
+QUARRY_FREQ - how common is the creature. Determines chance of QUARRY events. 1 to 100.
+DISTANCE - has to be lowered to within the TRACKING of the party to trigger a final confrontation.
+PERCEPTION - compared to the STEALTH of the group defines which side gets a bonus in a confrontation (by chance)
+AGGRESSIVENESS - defines how much a failed initial encounter increases/decreases the DISTANCE to the QUARRY. Aggressive creatures might hunt the party themselves.
+QUARRY_DIFFICULTY - determines the recommended party size for QUARRY and OTHER events based on what is encountered.
+
+PLAYER equipment slots:
+WEAPON - determines FIREPOWER, may lower STEALTH.
+SUIT - basic attire fit for a specific purpose. Impacts all player properties.
+TOOL - additional item impacting all player properties.
+
+EQUATIONS:
+DIFFICULTY = QUARRY_DIFFICULTY | PLANET_DIFFICULTY
+QUARRY_CHANCE = (PLANET_FREQ * QUARRY_FREQ)/100%
+MAX_TRIP_LENGTH = average player SUPPLIES rounded down
+EVENT_SUCCESS = EXP(-1*event_diff*EXP(-1*.5^modifier*ability))
+DISTANCE_CHANGE_AT_SUCCESS = -1*max(party_tracking)
+DISTANCE_CHANGE_AT_FAILURE = 10-AGGRESSIVENESS-max(party_tracking)
