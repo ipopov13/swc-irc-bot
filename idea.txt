@@ -17,11 +17,11 @@ TERRAIN - difficulties presented by the TERRAIN type, generic.
 QUARRY - initial events with the QUARRY chosen. Success decreases DISTANCE, failure decreases/increases it based on the QUARRY's AGGRESSIVENESS. When DISTANCE is lower than the party's TRACKING this turns into the final confrontation.
 OTHER - encounters with other possible quarries that match the current PLANET and TERRAIN.
 
-PLAYER properties (used to succeed/survive in EVENTS; individual min/max scores are 1 to 10;races have different bonuses):
+PLAYER properties (used to succeed/survive in EVENTS; individual min/max scores are 1 to 10; races can have different bonuses):
 FIREPOWER - for direct confrontation EVENTS and taking down heavy prey. Party sum. Modifier 3.
 STEALTH - to avoid danger or close the distance to the QUARRY. Party min. Modifier 2.
 TRACKING - impacts chance to find the QUARRY, lowering its DISTANCE property with every successful QUARRY event. Party max. HARD TO MAX OUT! Modifier 2.
-SUPPLIES - allows a certain amount of events to happen before the expedition has to go back. Party average.
+SUPPLIES - allows a certain amount of events to happen before the expedition has to go back. Party sum.
 RESILIENCE - determines the chance for a player to be injured so much that they cannot continue, ending the trip. Personal. Modifier 2.
 
 PLANET properties:
@@ -29,8 +29,7 @@ PLANET_FREQ - chance to find this particular QUARRY on this particular PLANET. 0
 PLANET_DIFFICULTY - recommended party size for PLANETARY and TERRAIN events.
 
 QUARRY properties:
-QUARRY_FREQ - how common is the creature. Determines chance of QUARRY events. 1 to 100.
-DISTANCE - has to be lowered to within the TRACKING of the party to trigger a final confrontation.
+QUARRY_FREQ - initially: how common is the creature. Determines chance of QUARRY events. 1 to 100. Increases with successful TRACKING checks. When it becomes 100 the next event is the final confrontation.
 PERCEPTION - compared to the STEALTH of the group defines which side gets a bonus in a confrontation (by chance)
 AGGRESSIVENESS - defines how much a failed initial encounter increases/decreases the DISTANCE to the QUARRY. Aggressive creatures might hunt the party themselves.
 QUARRY_DIFFICULTY - determines the recommended party size for QUARRY and OTHER events based on what is encountered.
@@ -43,7 +42,39 @@ TOOL - additional item impacting all player properties.
 EQUATIONS:
 DIFFICULTY = QUARRY_DIFFICULTY | PLANET_DIFFICULTY
 QUARRY_CHANCE = (PLANET_FREQ * QUARRY_FREQ)/100%
-MAX_TRIP_LENGTH = average player SUPPLIES rounded down
 EVENT_SUCCESS = EXP(-1*event_diff*EXP(-1*.5^modifier*ability))
-DISTANCE_CHANGE_AT_SUCCESS = -1*max(party_tracking)
-DISTANCE_CHANGE_AT_FAILURE = 10-AGGRESSIVENESS-max(party_tracking)
+QUARRY_FREQ_CHANGE_AT_SUCCESS = -1*player_tracking
+QUARRY_FREQ_CHANGE_AT_FAILURE = 10-AGGRESSIVENESS-player_tracking
+CHANCE_TO_USE_SUPPLIES_PER_EVENT = number_players * 20%
+
+Trip workflow:
+1) Players choose an available trip from the list on the forums, transfer the cost and receive a unique code by DM.
+2) Players register their usernames with the bot and enter their code.
+3) The bot relays the starting flavour text to the player immediately after code insertion and notes how many other party members are left to start the trip.
+4) When all party members have entered their codes the bot starts the trip by selecting the first event.
+5) Each player uses the /continue command to receive the event text and choose their action.
+6) Each player states their action with one of the available commands:
+- /fight & /hide: available in dangerous events.
+- /track: available in initial QUARRY events.
+- /survive: available in RESILIENCE challenges.
+- /rest: available if the character is injured and the event is not dangerous or RESILIENCE challenge.
+- /heal char_name: available if there is an injured member of the party (other than the current player) who has selected /rest as their action (gives a prompt that clarifies that condition if it's not met).
+- /forage: available in non-combat PLANETARY and TERRAIN events.
+7) The bot makes all player actions visible to other party members.
+8) Once all players have chosen an action results are determined and the bot describes each of them (fighting is a group action, all other actions are personal).
+9) FIREPOWER, STEALTH, TRACKING, and RESILIENCE checks are made for the encounter, depending on what it requires.
+- If a FIREPOWER check fails a random fighting party member has a RESILIENCE check, and is injured if it fails.
+- If any STEALTH checks fail a random hiding party member has a RESILIENCE check, and is injured if it fails.
+- QUARRY_FREQ is modified based on the best TRACKING check result for the whole group.
+- RESILIENCE checks are made for:
+    - surviving RESILIENCE challenges.
+    - resting/helping injured characters. The checked value is the max(RESILIENCE) of all resting/helping characters +1 for each additional character with RESILIENCE equal to the max. [max(res_list) + res_list.count(max(res_list))-1]
+10) If this was the final confrontation and it failed QUARRY_FREQ is lowered to 90 and the trip continues.
+11) If this was the final confrontation and it succeeded the trip ends. Characters receive an experience point if this is the first time they are on this particular trip (PLANET & QUARRY). Player codes are deactivated.
+11) If an already injured player has been injured again they cannot continue or be revived in the field and the trip ends prematurely. Player codes are deactivated and the incapacitated player cannot take part in a hunt for 24 hours.
+12) If none of the above is true the bot automatically selects the next event. Any /party messages sent are now automatically numbered as belonging to the next event. Players can use the /event command to review the completed event (including the mentioned party messages), or the /continue command to move to the next one (text, messages and actions from the previous event are not shown in /event output anymore).
+
+*) The bot is able to accept the /s(tatus) command at all times to return the current trip length, an estimate of how long remaining supplies will last, and an estimate of the time needed to find the QUARRY. Also lists any current injuries.
+*) The bot is able to accept the /e(vent) command at all times to repeat the last event text plus any party messages sent since the start of the event, and all player action already taken to the player and ask for their reaction.
+*) The bot is able to accept the /p(arty) command at all times to record a party message from the player for action coordination. These messages are sent immediately to party members that are in the channel.
+*) The bot is able to accept the /t(rip) command at all times to repeat all event texts plus any party messages and actions sent in their order to the player.
