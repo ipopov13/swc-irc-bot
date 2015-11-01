@@ -1,4 +1,5 @@
 import socket
+import pickle
 from time import sleep
 
 owner='Iven_Trall'
@@ -44,6 +45,13 @@ def parse(buff):
         print message
     return buff.split('\r\n',1)[1]
 
+## Load known characters
+with open("registered_hunters.txt",'r') as infile:
+    try:
+        hunters=pickle.load(infile)
+    except:
+        hunters={}
+## Connect to server
 irc=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 irc.setblocking(True)
 print "connecting to:"+server
