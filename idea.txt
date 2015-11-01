@@ -47,22 +47,23 @@ QUARRY_FREQ_CHANGE_AT_FAILURE = 10-AGGRESSIVENESS-player_tracking
 CHANCE_TO_USE_SUPPLIES_PER_EVENT = number_players * 20%
 
 Trip workflow:
-0) Players register their nick with the bot with the /sign-up command. Only the current nick is registered and is linked to the current track record of the hunter and any experience points accumulated.
-1) Players choose an available trip from the bot with the /planet and /quarry commands. /planet lists all available planets with their difficulty indices if no QUARRY has been selected, or planets that have that QUARRY if it has been selected, /planet planet_name selects a planet. /quarry lists all available creatures with their difficulty if no planet has been selected, and planet specific creatures if it has been, /quarry creature_name selects the creature. /planet clear and /quarry clear reset the choise.
-2) Once the player has chosen both a planet and quarry they can use the /status command to see their choice and the cost they have to pay for the trip either as an individual in a random party (size based on the difficulty of the planet) or a complete group (size = QUARRY_DIFF).
+0) Players register their nick with the bot with the !sign-up command. Only the current nick is registered and is linked to the current track record of the hunter and any experience points accumulated.
+1) Players choose their initial equipment after registration. Equipment can be changed at any time when not on a trip (between first event (!continue command) and trip ending)
+1) Players choose an available trip from the bot with the !planet and !quarry commands. !planet lists all available planets with their difficulty indices if no QUARRY has been selected, or planets that have that QUARRY if it has been selected, !planet planet_name selects a planet. !quarry lists all available creatures with their difficulty if no planet has been selected, and planet specific creatures if it has been, !quarry creature_name selects the creature. !planet clear and !quarry clear reset the choise.
+2) Once the player has chosen both a planet and quarry they can use the !status command to see their choice and the cost they have to pay for the trip either as an individual in a random party (size based on the difficulty of the planet) or a complete group (size = QUARRY_DIFF).
 3) The player transfers the cost and receives a unique code by DM. They can specify the number of players in their party if group based, with maximum party size = QUARRY_DIFF.
 2.1) Individual hunters enter their code and are added to the current random person party for the planet.
 2.2) Organized groups enter the same code and are treated separately with a defined QUARRY.
 3) The bot relays the starting flavour text to the player immediately after code insertion and notes how many other party members are left to start the trip.
 4) When the party reaches the proper size (planetary diff for random groups, preset size for organized groups) the bot starts the trip by selecting the first event.
-5) Each player uses the /continue command to receive the event text and choose their action.
+5) Each player uses the !continue command to receive the event text and choose their action.
 6) Each player states their action with one of the available commands:
-- /fight & /hide: available in dangerous events.
-- /track: available in initial QUARRY events for organized groups and indirect OTHER events for radom groups.
-- /survive: available in RESILIENCE challenges.
-- /rest: available if the character is injured and the event is not dangerous or RESILIENCE challenge.
-- /heal char_name: available if there is an injured member of the party (other than the current player) who has selected /rest as their action (gives a prompt that clarifies that condition if it's not met).
-- /forage: available in non-combat PLANETARY and TERRAIN events.
+- !fight & !hide: available in dangerous events.
+- !track: available in initial QUARRY events for organized groups and indirect OTHER events for radom groups.
+- !survive: available in RESILIENCE challenges.
+- !rest: available if the character is injured and the event is not dangerous or RESILIENCE challenge.
+- !heal char_name: available if there is an injured member of the party (other than the current player) who has selected !rest as their action (gives a prompt that clarifies that condition if it's not met).
+- !forage: available in non-combat PLANETARY and TERRAIN events.
 7) The bot makes all player actions visible to other party members.
 8) Once all players have chosen an action results are determined and the bot describes each of them (fighting is a group action, all other actions are personal).
 9) FIREPOWER, STEALTH, TRACKING, and RESILIENCE checks are made for the encounter, depending on what it requires.
@@ -79,9 +80,9 @@ Trip workflow:
 12) If this was the selected quarry for one or more people in a random group they are noted down to receive an experience point once the group supplies run out.
 13) If none of the above is true a check is made to see if the group supplies go down.
 14) If group supplies become negative the trip ends. If this happens organized groups fail and do not receive experience, while in a random group everyone that fought in an encounter with their selected QUARRY gets an experience point if this is the first time they are hunting that QUARRY.
-12) If supplies are not negative the bot automatically selects the next event. Any /party messages sent are now automatically numbered as belonging to the next event. Players can use the /event command to review the completed event (including the mentioned party messages), or the /continue command to move to the next one (text, messages and actions from the previous event are not shown in /event output anymore).
+12) If supplies are not negative the bot automatically selects the next event. Any !party messages sent are now automatically numbered as belonging to the next event. Players can use the !event command to review the completed event (including the mentioned party messages), or the !continue command to move to the next one (text, messages and actions from the previous event are not shown in !event output anymore).
 
-*) The bot is able to accept the /s(tatus) command at all times to return the current trip length, an estimate of how long remaining supplies will last, and an estimate of the time needed to find the QUARRY. Also lists any current injuries.
-*) The bot is able to accept the /e(vent) command at all times to repeat the last event text plus any party messages sent since the start of the event, and all player action already taken to the player and ask for their reaction if not already submitted.
-*) The bot is able to accept the /p(arty) command at all times to record a party message from the player for action coordination. These messages are sent immediately to party members that are in the channel.
-*) The bot is able to accept the /t(rip) command at all times to repeat all event texts plus any party messages and actions sent in their order to the player.
+*) The bot is able to accept the !s(tatus) command at all times to return the current trip length, an estimate of how long remaining supplies will last, and an estimate of the time needed to find the QUARRY. Also lists any current injuries.
+*) The bot is able to accept the !e(vent) command at all times to repeat the last event text plus any party messages sent since the start of the event, and all player action already taken to the player and ask for their reaction if not already submitted.
+*) The bot is able to accept the !p(arty) command at all times to record a party message from the player for action coordination. These messages are sent immediately to party members that are in the channel.
+*) The bot is able to accept the !t(rip) command at all times to repeat all event texts plus any party messages and actions sent in their order to the player.

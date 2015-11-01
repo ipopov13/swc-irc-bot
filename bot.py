@@ -35,11 +35,23 @@ def parse(buff):
         print message,'\nPONG'
     ## handle private messages to the bot
     elif "PRIVMSG %s" %(botnick) in message:
-        if message.startswith(':'+owner):
+        sender=message.split("!")[0][1:]
+        ## Handle owner-only functions
+        if sender==owner:
             if '!shut_down' in message:
                 return "!shut_down"
             else:
                 print message
+        ## Handle hunter commands
+        if message.strip().endswith(':!register'):
+            if sender in hunters:
+                irc.send("PRIVMSG %s :You are already registered as a hunter!\n" %(sender))
+            else:
+                hunters[sender]={'equipment':[-1,-1,-1],'trip':-1,'selected':[-1,-1],
+                                 'on_trip':False,'injured':False,'injured_on':0}
+                irc.send("PRIVMSG %s :Congratulations! You are now registered as a hunter and can use our guide service to explore the various worlds of the Galaxy. Use !help to see available commands at any time!\n" %(sender))
+        else:
+            irc.send("PRIVMSG %s :This is not a recognized command, try !help to see available commands.\r\n" %(sender))
     ## handle channel messages?
     elif "PRIVMSG %s" %(channel) in message:
         print message
@@ -65,3 +77,6 @@ while True:
     if buff=='!shut_down':
         break
 irc.close()
+## Save known characters
+with open("registered_hunters.txt",'w') as outfile:
+    pickle.dump(hunters,outfile)
