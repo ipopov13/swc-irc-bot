@@ -1,0 +1,29 @@
+Type	Name	Firepower	Stealth	Tracking	Resilience	Supplies
+weapons	X-45 Sniper Rifle	7	0	0	-1	0
+weapons	Bowcaster	8	-2	0	0	0
+weapons	Valken-38 Carbine	5	0	0	0	0
+weapons	Scout Blaster	3	2	0	0	0
+weapons	MG-15 Carbine	6	0	0	2	-2
+weapons	EE-3 Carbine	8	-1	0	0	-1
+weapons	Bryar Rifle	4	0	0	1	0
+weapons	B22 Blaster	3	1	0	1	0
+weapons	Relby K-23	6	0	0	-1	0
+weapons	CVI Rotating Heavy Cannon	10	-4	0	2	-4
+weapons	NZ 9118 Heavy Carbine	9	-3	0	0	-1
+weapons	Rykk Blade	2	1	0	2	1
+weapons	Whip	2	2	1	0	0
+tools	Stun Grenade	1	0	0	1	0
+tools	Camouflage tent	0	2	0	2	1
+tools	Bio-sensor Pack	0	0	5	0	0
+tools	Thermal Goggles	0	2	3	0	0
+tools	Supply Pack	0	0	0	0	20
+tools	Large Backpack	0	0	0	2	5
+tools	Tool Belt	0	1	1	2	1
+tools	Camo-field Generator	0	4	0	0	-1
+tools	Medikit	0	0	0	5	-1
+suits	Survival Suit	0	0	0	5	2
+suits	Cargo Suit	0	-1	0	2	5
+suits	Camouflage Suit	0	5	0	0	1
+suits	Heavy Battle Armour	0	-3	0	8	-2
+suits	Combat Armour	1	1	0	5	0
+suits	Tracker Suit	0	1	4	0	0

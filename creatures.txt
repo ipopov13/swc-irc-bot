@@ -1,0 +1,12 @@
+Eye-snatcher	Ithor	Jungle	Stealth	1
+Eye-shatcher flavour text.
+Eye-snatcher initial contact.
+Eye-snatcher final confrontation.
+Geejaw	Forest Moon of Endor	Forest	Tracking	1
+Geejaw flavour text.
+Geejaw initial contact.
+Geejaw final confrontation.
+100 Gizka challenge	all	all	Firepower	*
+100 Gizka challenge flavour text.
+100 Gizka challenge initial contact.
+100 Gizka challenge final confrontation.

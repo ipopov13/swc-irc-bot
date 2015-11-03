@@ -13,7 +13,7 @@ QUARRY_CHANCE - based on QUARRY and PLANET, chance for a quarry encounter at eve
 
 Specific EVENTS (those can give items that impact the trip and party variables, may even be required; when a party event is failed a random player is tested for injury; when a personal difficulty event is failed every failing player is tested for injury):
 PLANETARY - based on the specific planet, have flavour for the specific world.
-TERRAIN - difficulties presented by the TERRAIN type, generic.
+TERRAIN - difficulties presented by the TERRAIN type, generic. Can be RESILIENCE or PEACEFUL.
 QUARRY - initial events with the QUARRY chosen. Success decreases DISTANCE, failure decreases/increases it based on the QUARRY's AGGRESSIVENESS. When DISTANCE is lower than the party's TRACKING this turns into the final confrontation.
 OTHER - encounters with other possible quarries that match the current PLANET and TERRAIN.
 
@@ -23,10 +23,16 @@ STEALTH - to avoid danger or close the distance to the QUARRY. Party min. Modifi
 TRACKING - impacts chance to find the QUARRY, lowering its DISTANCE property with every successful QUARRY event. Party max. HARD TO MAX OUT! Modifier 2.
 SUPPLIES - allows a certain amount of events to happen before the expedition has to go back. Party sum.
 RESILIENCE - determines the chance for a player to be injured so much that they cannot continue, ending the trip. Personal. Modifier 2.
+EXPERIENCE - The number of different creatures the character has successfuly hunted. Allows an effective increase in skill for all skill checks as follows:
+    - +1 with chance = experience
+    - +1 more with chance = experience - 10
+    - +1 more with chance = experience - 20
+    - and so on.
 
 PLANET properties:
-PLANET_FREQ - chance to find this particular QUARRY on this particular PLANET. 0 to 1.
+QUARRY_CHANCE - chance to find this particular QUARRY on this particular PLANET. 0 to 1.
 PLANET_DIFFICULTY - recommended party size for PLANETARY and TERRAIN events.
+TERRAINS - An ordered list of terrains that can be found on the planet. In organized groups the QUARRY inhabits a specific type of TERRAIN and the TERRAIN events are limited to those of the creature + those adjacent to them in the list (with a lower probability).
 
 QUARRY properties:
 QUARRY_FREQ - initially: how common is the creature. Determines chance of QUARRY events. 1 to 100. Increases with successful TRACKING checks. When it becomes 100 the next event is the final confrontation.
@@ -46,9 +52,16 @@ QUARRY_FREQ_CHANGE_AT_SUCCESS = -1*player_tracking
 QUARRY_FREQ_CHANGE_AT_FAILURE = 10-AGGRESSIVENESS-player_tracking
 CHANCE_TO_USE_SUPPLIES_PER_EVENT = number_players * 20%
 
+EVENT selection rules:
+1) Organized groups have a fixed chance to meet the QUARRY, starting at QUARRY_CHANCE and increased with every successful encounter.
+2) If no QUARRY is encountered or it's a random group teh next event is chosen randomly from all applicable of the following:
+- The available PLANETARY events.
+- The available TERRAIN (RESILIENCE/PEAEFUL) events (matching the QUARRY for organized; all TERRAINs for random).
+- If the previous event was TERRAIN (either RESILIENCE or PEAEFUL) - the available OTHER creature events that match that TERRAIN.
+
 Trip workflow:
 0) Players register their nick with the bot with the !sign-up command. Only the current nick is registered and is linked to the current track record of the hunter and any experience points accumulated.
-1) Players choose their initial equipment after registration. Equipment can be changed at any time when not on a trip (between first event (!continue command) and trip ending)
+1) Players choose their initial equipment after registration. Equipment can be changed at any time when not on a trip (between entering the code and trip ending)
 1) Players choose an available trip from the bot with the !planet and !quarry commands. !planet lists all available planets with their difficulty indices if no QUARRY has been selected, or planets that have that QUARRY if it has been selected, !planet planet_name selects a planet. !quarry lists all available creatures with their difficulty if no planet has been selected, and planet specific creatures if it has been, !quarry creature_name selects the creature. !planet clear and !quarry clear reset the choise.
 2) Once the player has chosen both a planet and quarry they can use the !status command to see their choice and the cost they have to pay for the trip either as an individual in a random party (size based on the difficulty of the planet) or a complete group (size = QUARRY_DIFF).
 3) The player transfers the cost and receives a unique code by DM. They can specify the number of players in their party if group based, with maximum party size = QUARRY_DIFF.
