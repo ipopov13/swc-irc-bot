@@ -1,0 +1,4 @@
+Type	name	difficulty	terrains	cost	description	planet	frequency
+destination	Ithor	3	G/O/F/J	10000	A beautiful green planet, Ithor is one of the most desired destinations for explorers and naturalists. The extremely difficult access increases this interest thousandfold.	0	0
+destination	the Forest Moon of Endor	3	O/F/R/M/G	7000	As a site of historical value the Forest Moon has seen some increase in tourist activity. It is also home to a huge abundance of animal species, making it a perfect hunting destination.	0	0
+game	Eye-snatcher	1	J	1000	A rare jungle bird, the eye-snatcher is valued both for its song and as an expensive addition to any ornithologist's collection.	Ithor	10

@@ -1,0 +1,89 @@
+help0:-      Welcome to the office of the GSC! Here at the GALACTIC SAFARI
+help0:-  COMPANY we provide interested individuals with the means to explore
+help0:-  the most interesting worlds of the Galaxy and hunt the most dangerous
+help0:-  creatures in existence today! If you would like to be added on our
+help0:-  evergrowing customer list simply use the !sign-up command and follow
+help0:-  the instructions of the staff.
+help0:-      You do not need other people to try out the service - there are
+help0:-  numerous less dangerous creatures to hunt out there. However, having
+help0:-  a group is more fun, and lets you chase rancors to your hearts
+help0:-  desire!
+
+help1:-  Welcome to the office of the GSC! Please read carefully the following
+help1:-  information pertaining to the use of our services.
+help1:-
+help1:-  COMMANDS
+help1:-   To select equipment: !weapons, !tools, !suits
+help1:-   To check your hunting ticket status: !status
+help1:-   To select a hunting destination: !destination, !game
+help1:-
+help1:-      Please note these are the commands available when no hunting trip
+help1:-  is under way. When you arrive at your selected destination you should
+help1:-  consult the local information directory for further instructions!
+help1:-
+help1:-  STARTING A HUNTING TRIP
+help1:-      If you are new you should try our free tours that are always
+help1:-  located on the top of the !game list!
+help1:-      Once you have selected both a planet and a creature with the
+help1:-  !destination and !game commands you can check the different prices
+help1:-  for the trip with the !status command. There are three types of
+help1:-  hunting trips:
+help1:-      1) A single ticket to the planet with a random group (group size
+help1:-  is based on how dangerous the planet is). You may or may not encounter
+help1:-  the specific creature you are hunting during the trip, depending on
+help1:-  how rare the creature is. No experience is awarded if the creature is
+help1:-  not encountered and successfuly defeated/captured!
+help1:-      2) An organized group with a maximum size based on the planet and
+help1:-  specific creature you selected. The encounter is guaranteed, if the
+help1:-  group manages to survive long enough. You select the actual group size.
+help1:-      3) Organized groups with GSC back-up. Same as the above, except
+help1:-  that the group will be complemented by Company hunters, guides or
+help1:-  trackers up to the requested size in the case of forced departure
+help1:-  (see below).
+help1:-      Send the funds to Iven Trall along with a DM clearly stating the
+help1:-  trip you'd like to purchase and the size of your hunting party if
+help1:-  organized. 
+help1:-      Once you pay the cost you will receive a code for the trip, which
+help1:-  you have to enter with the `!start code` command. Hunters registering
+help1:-  an organized group will also receive a second code, which they can use
+help1:-  to force the start of the trip in case some of the party members can't
+help1:-  make it, using the `!force code` command.
+help1:-      RANDOM groups will start once the group size for the planet has
+help1:-  been filled or 24 hours after the first hunter registration, whichever
+help1:-  comes first. In the later case the group is filled with company
+help1:-  hunters, trackers or guides up to the recommended size for the planet.
+help1:-      ORGANIZED groups will start once the chosen number of hunters have
+help1:-  entered the code or the `force` code is used. Forced groups will NOT
+help1:-  be complemented with GSC guides and/or trackers if the GSC back-up
+help1:-  option was not selected!
+help1:-
+help1:-  EXPERIENCE AND INJURY
+help1:-      Your hunting experience is increased with each unique
+help1:-  destination/creature combination you select and complete successfuly.
+help1:-  Experience gives you a percentage chance to perform better at any
+help1:-  task, letting you survive longer and take down more dangerous
+help1:-  creatures.
+help1:-      You can sometimes be injured in your travels. Your teammates can
+help1:-  try to help you, and you can also rest during less dangerous parts of
+help1:-  the trip, but if you do not heal and are injured a second time the
+help1:-  trip is over for the whole group and you will not be able to join
+help1:-  another trip for 24 hours!
+
+registered:-      Congratulations! You are now registered as a hunter and can use our
+registered:-  guide service to explore the various worlds of the Galaxy. Use !help to
+registered:-  see available commands at any time!
+registered:-      You should now select your starting equipment. Equipped items can
+registered:-  be changed freely between trips, but once you start the hunt you have
+registered:-  to finish with what you have selected. When exploring dangerous planets
+registered:-  or tracking lethal prey it is good to bring along friends with equipment
+registered:-  that complements your own.
+registered:-      Use !weapons, !tools, and !suits to check out the available
+registered:-  equipment and make a selection.
+registered:-      After that you can try our free tours that are always located on
+registered:-  the top of the game list! (use !help or !game for details)
+registered:-
+registered:-      YOU WILL NOT BE ALLOWED TO PARTICIPATE IN A HUNT BEFORE EQUIPPING
+registered:-  AN ITEM IN EVERY SLOT!
+
+
+
