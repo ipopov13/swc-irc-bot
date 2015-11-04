@@ -1,0 +1,25 @@
+0:Welcome to the office of the GSC! Here at the Galactic Safari Company we provide interested individuals with the means to explore the most interesting worlds of the Galaxy and hunt the most dangerous creatures in existence today! If you would like to be added on our evergrowing customer list simply use the !sign-up command and follow the instructions of the staff.
+0:You do not need other people to try out the service - there are numerous less dangerous creatures to hunt out there. Having a group, however, is more fun, and lets you chase rancors to your hearts desire!
+
+1:Welcome to the office of the GSC! Please read carefully the following information pertaining to the use of our services.
+1:.
+1: COMMANDS
+1:  To select equipment: !weapons, !tools, !suits
+1:  To check your hunting ticket status: !status
+1:  To select a hunting destination: !destination, !game
+1:  Please note these are the commands available when no hunting trip is under way. When you arrive at your selected destination you should consult the local information directory for further instructions!
+1:.
+1: STARTING A HUNTING TRIP
+1:  If you are new you should try our free tours that are always located on the top of the !game list!
+1:  Once you have selected both a planet and a creature with the !destination and !game commands you can check the different prices for the trip with the !status command. There are three types of hunting trips:
+1:   1) A single ticket to the planet with a random group (group size is based on how dangerous the planet is). You may or may not encounter the specific creature you are hunting during the trip, depending on how rare the creature is. No experience is awarded if the creature is not encountered and successfuly defeated/captured!
+1:   2) An organized group with a recommended size based on the specific creature you selected. The encounter is guaranteed, if the group manages to survive long enough. You select the actual group size.
+     3) Organized groups with GSC back-up. Same as the above, except that the group will be complemented by Company hunters, guides or trackers up to the requested size in the case of forced departure (see below).
+1:  Send the funds to Iven Trall along with a DM clearly stating the trip you'd like to purchase and the size of your hunting party if organized. 
+1:  Once you pay the cost you will receive a code for the trip, which you have to enter with the `!start code` command. Hunters registering an organized group will also receive a second code, which they can use to force the start of the trip in case some of the party members can't make it, using the `!force code` command.
+1:  RANDOM groups will start once the group size for the planet has been filled or 24 hours after the first hunter registration, whichever comes first. In the later case the group is filled with company hunters, trackers or guides up to the recommended size for the planet.
+1:  ORGANIZED groups will start once the chosen number of hunters have entered the code or the `force` code is used. Forced groups will NOT be complemented with GSC guides and/or trackers if the GSC back-up option was not selected!
+1:.
+1: EXPERIENCE AND INJURY
+1:  Your hunting experience is increased with each unique destination/creature combination you select and complete successfuly. Experience gives you a percentage chance to perform better at any task, letting you survive longer and take down more dangerous creatures.
+1:  You can sometimes be injured in your travels. Your teammates can try to help you, and you can also rest during less dangerous parts of the trip, but if you do not heal and are injured a second time the trip is over for the whole group and you will not be able to join another trip for 24 hours!

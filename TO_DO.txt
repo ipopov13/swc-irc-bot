@@ -1,0 +1,2 @@
+Add preset GSC hunters, trackers and guides with standardized equipment and add them to random or organized+ groups based on group stats!
+Manage a list of online hunters to send party messages to.
