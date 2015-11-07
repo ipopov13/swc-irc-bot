@@ -1,5 +1,6 @@
-## TO DO: code and trip commands!
+Load events from file with identifiers
+Select event from possible based on planet/terrain/game
+Add event identifier to events list for trip
+
 Set dest and game to 0 after trip end!
-When a party is formed (hunter uses a code) the party stats are calculated for every check so updates can be made without problems.
-Add preset GSC hunters, trackers and guides with standardized equipment and add them to random or organized+ groups based on group stats!
 Manage a list of online hunters to send party messages to.

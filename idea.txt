@@ -69,7 +69,7 @@ Trip workflow:
 2.2) Organized groups enter the same code and are treated separately with a defined QUARRY.
 3) The bot relays the starting flavour text to the player immediately after code insertion and notes how many other party members are left to start the trip.
 4) When the party reaches the proper size (planetary diff for random groups, preset size for organized groups) the bot starts the trip by selecting the first event.
-5) Each player uses the !continue command to receive the event text and choose their action.
+5) Each player uses the !trip command to receive the event text and choose their action.
 6) Each player states their action with one of the available commands:
 - !fight & !hide: available in dangerous events.
 - !track: available in initial QUARRY events for organized groups and indirect OTHER events for radom groups.
@@ -96,6 +96,5 @@ Trip workflow:
 12) If supplies are not negative the bot automatically selects the next event. Any !party messages sent are now automatically numbered as belonging to the next event. Players can use the !event command to review the completed event (including the mentioned party messages), or the !continue command to move to the next one (text, messages and actions from the previous event are not shown in !event output anymore).
 
 *) The bot is able to accept the !s(tatus) command at all times to return the current trip length, an estimate of how long remaining supplies will last, and an estimate of the time needed to find the QUARRY. Also lists any current injuries.
-*) The bot is able to accept the !e(vent) command at all times to repeat the last event text plus any party messages sent since the start of the event, and all player action already taken to the player and ask for their reaction if not already submitted.
-*) The bot is able to accept the !p(arty) command at all times to record a party message from the player for action coordination. These messages are sent immediately to party members that are in the channel.
-*) The bot is able to accept the !t(rip) command at all times to repeat all event texts plus any party messages and actions sent in their order to the player.
+*) The bot is able to accept the !p(arty) command at all times to record a party message from the player for action coordination, or list all messages if no text is given. These messages are sent immediately to party members that are in the channel.
+*) The bot is able to accept the !t(rip) command at all times during a trip to repeat the last event text plus any party actions sent in their order to the player.
