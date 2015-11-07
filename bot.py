@@ -153,10 +153,11 @@ class Safari_bot:
         self.relay_content(hunter,self.trips[self.hunters[hunter]['trip']]['events'][-1])
         if command=='arrive':
             if hunter not in self.trips[self.hunters[hunter]['trip']]['actions']:
-                self.trips[self.hunters[hunter]['trip']]['actions'].append([hunter,'arrive'])
+                self.trips[self.hunters[hunter]['trip']]['actions'][hunter]='arrive'
             self.irc.send("PRIVMSG %s : %d more hunters have to join before the trip can start.\n" %(hunter,int(self.trips[self.hunters[hunter]['trip']]['size'])-len(self.trips[self.hunters[hunter]['trip']]['actions'])))
-            if not self.trips[self.hunters[hunter]['trip']]['organized']:
-                self.irc.send("PRIVMSG %s : This trip will also start automatically in %d hours!.\n" %(hunter,24-int((time.time()-self.trips[self.hunters[hunter]['trip']]['started_on'])/3600)))
+            if not self.trips[self.hunters[hunter]['trip']]['force']:
+                self.irc.send("PRIVMSG %s : This trip will also start automatically in %d hours!\n"
+                              %(hunter,24-int((time.time()-self.trips[self.hunters[hunter]['trip']]['started_on'])/3600)))
                 if 24-int((time.time()-self.trips[self.hunters[hunter]['trip']]['started_on'])/3600)<=0:
                     self.back_up(self.hunters[hunter]['trip'])
         if len(self.trips[self.hunters[hunter]['trip']]['actions'])+self.trips[self.hunters[hunter]['trip']]['back-up']==int(self.trips[self.hunters[hunter]['trip']]['size']):
@@ -205,6 +206,11 @@ class Safari_bot:
                 administrative=True
                 if '!shut-down' in message:
                     return "!shut-down"
+                elif '!clear-my-trips' in message:
+                    self.trips={}
+                    self.orders={}
+                    self.hunters[self.owner]['trip']=0
+                    self.irc.send("PRIVMSG %s :Trip and order data cleared!\n" %(sender))
                 elif '!clear-me' in message:
                     try:
                         self.hunters.pop(sender)
@@ -249,12 +255,12 @@ class Safari_bot:
                                               'destination':destination,'game':game,
                                               'size':self.orders[args[0]]['organized'],
                                               'back-up':self.orders[args[0]]['back-up'],
-                                              'started_on':0,'actions':[]}
+                                              'started_on':0,'actions':{}}
                         elif 'random%d' %(destination) not in self.trips:
                             self.trips['random%d' %(destination)]={'force':0,'party':[],'events':[destname+'_arrival'],
                                               'destination':destination,'game':0,
                                               'size':self.destinations['destination'][destination]['difficulty'],
-                                              'back-up':True,'started_on':0,'actions':[]}
+                                              'back-up':True,'started_on':0,'actions':{}}
                         ## Set destination and game for the buyer to remove confusion
                         self.hunters[args[0]]['selected']['destination']=self.destlist.index(args[1].lower())+1
                         self.hunters[args[0]]['selected']['game']=self.gamelist.index(args[2].lower())+1
@@ -289,7 +295,7 @@ class Safari_bot:
                     ## Random groups are time checked here and filled up with back-up
                     self.trip_step(sender)
                 ## Start trip
-                if not self.hunters[sender]['trip'] and ':!start ' in message:
+                elif ':!start ' in message:
                     if 0 in self.hunters[sender]['equipment'].values():
                         self.irc.send("PRIVMSG %s :You cannot start a trip without selecting your equipment! Use !weapons, !tools, and !suits first.\n" %(sender))
                     else:
@@ -307,21 +313,23 @@ class Safari_bot:
                                     self.irc.send("PRIVMSG %s :Wrong force code!\n" %(sender))
                                 else:
                                     self.irc.send("PRIVMSG %s :You have already started your trip! Use !trip to see your progress.\n" %(sender))
-                            else:
+                            elif not self.hunters[sender]['trip']:
                                 self.hunters[sender]['trip']=codes[0]
                                 self.hunters[sender]['selected']['destination']=self.trips[codes[0]]['destination']
                                 self.hunters[sender]['selected']['game']=self.trips[codes[0]]['game']
                                 self.trips[codes[0]]['party'].append(sender)
                                 self.trip_step(sender)
+                            else:
+                                self.irc.send("PRIVMSG %s :You have already started a trip! Use !trip to see your progress.\n" %(sender))
                         ## random trips
                         elif sender in self.orders and codes[0]==self.orders[sender]['code']:
                             trip_name='random%d' %(self.orders[sender]['destination'])
                             self.hunters[sender]['trip']=trip_name
                             self.trips[trip_name]['party'].append(sender)
-                            self.trip_step(sender)
                             ## Note trip start to count 24 hours
                             if not self.trips[trip_name]['started_on']:
                                 self.trips[trip_name]['started_on']=time.time()
+                            self.trip_step(sender)
                             ## if party size is reached separate trip, change member trip names
                             if len(self.trips[trip_name]['party'])==self.trips[trip_name]['size']:
                                 new_trip=self.gen_code(sender)
@@ -333,9 +341,11 @@ class Safari_bot:
                                 return 0
                         ## Handle free trips
                         elif codes[0].lower() in self.gamelist and self.destinations['game'][self.gamelist.index(codes[0].lower())+1]['cost']=='0':
+                            ## Set ticket
                             m=":%s! PRIVMSG %s :!ticket %s %s %s\r\n" %(self.owner,self.botnick,sender,self.destinations['game'][self.gamelist.index(codes[0].lower())+1]['planet'],
                                                                         self.destinations['game'][self.gamelist.index(codes[0].lower())+1]['name'])
                             self.parse(m,free_trip=True)
+                            ## Restart with new code
                             self.parse(message.replace(codes[0],self.orders[sender]['code']),free_trip=True)
                         else:
                             self.irc.send("PRIVMSG %s :Wrong trip code!\n" %(sender))
@@ -386,7 +396,6 @@ class Safari_bot:
                     self.irc.send("PRIVMSG %s :Hunter statistics for %s:\n" %(sender,sender))
                     self.irc.send("PRIVMSG %s :EQUIPMENT\n" %(sender))
                     self.list_personal(sender)
-                    self.irc.send("PRIVMSG %s :Hunting experience: %d\n" %(sender,self.hunters[sender]['exp']))
                     if self.hunters[sender]['injured_on']:
                         injury_time=int((time.time()-self.hunters[sender]['injured_on'])/3600.)
                         if injury_time>=24:
@@ -395,15 +404,25 @@ class Safari_bot:
                             injured='Under surveilance! (%d hour%s remaining)' %(24-injury_time,'s' if injury_time<23 else '')
                     else:
                         injured='Cleared for participation'
-                    self.irc.send("PRIVMSG %s :Medical status: %s\n" %(sender,injured))
+                    self.irc.send("PRIVMSG %s :Hunting experience: %d   Medical status: %s\n" %(sender,self.hunters[sender]['exp'],injured))
+                    sels="PRIVMSG %s :"
                     for d in ['destination','game']:
-                        self.irc.send("PRIVMSG %s :Selected %s: %s\n" %(sender,d,self.destinations[d][self.hunters[sender]['selected'][d]]['name'] if self.hunters[sender]['selected'][d] else 'None'))
-                    ## give free code or price with instructions if game is selected
+                        sels+="Selected %s: %s" %(d,self.destinations[d][self.hunters[sender]['selected'][d]]['name'] if self.hunters[sender]['selected'][d] else 'None')
+                        if d=='destination':
+                            sels+='    '
+                        else:
+                            sels+='\n'
+                    self.irc.send(sels %(sender))
+##                    for d in ['destination','game']:
+##                        self.irc.send("PRIVMSG %s :Selected %s: %s\n" %(sender,d,self.destinations[d][self.hunters[sender]['selected'][d]]['name'] if self.hunters[sender]['selected'][d] else 'None'))
+                    ## Give free code or price with instructions if game is selected
                     ## or codes if it's already paid
                     if self.hunters[sender]['selected']['game']:
-                        if self.destinations['game'][self.hunters[sender]['selected']['game']]['cost']=='0':
+                        ## Free trips
+                        if self.destinations['game'][self.hunters[sender]['selected']['game']]['cost']=='0' and not self.hunters[sender]['trip']:
                             code=self.destinations['game'][self.hunters[sender]['selected']['game']]['name']
                             self.irc.send("PRIVMSG %s :Free trip confirmed, use `!start %s` to travel to your destination! Depending on the interest in your chosen location there may be a delay of up to 24 hours until the start of the actual trip!\n" %(sender,code))
+                        ## Unpaid trips
                         elif sender not in self.orders and not self.hunters[sender]['trip']:
                             # Trip cost is sum of planet and creature
                             dest_cost=int(self.destinations['destination'][self.hunters[sender]['selected']['destination']]['cost'])
@@ -414,6 +433,7 @@ class Safari_bot:
                             self.irc.send("PRIVMSG %s :  %d credits PER PARTY SLOT for organized groups WITH GSC back-up.\n" %(sender,dest_cost+game_cost))
                             self.irc.send("PRIVMSG %s :Please transfer funds and DM trip information (selected destination and game, plus group size and back-up requested (Yes/No) for organized groups) to %s and check !status later for your activation codes!\n"
                                           %(sender,self.owner_handle))
+                        ## Paid trips
                         elif not self.hunters[sender]['trip']:
                             self.irc.send("PRIVMSG %s :Congratulations, your order has been processed!\n" %(sender))
                             self.irc.send("PRIVMSG %s :Start code: %s\n" %(sender,self.orders[sender]['code']))
@@ -425,6 +445,9 @@ class Safari_bot:
                                     self.irc.send("PRIVMSG %s :If you use the force code your group will be complemented with hunters from our staff to the size of %d!\n" %(sender,self.orders[sender]['organized']))
                             else:
                                 self.irc.send("PRIVMSG %s :You can now use the `!start start_code` command to travel to your destination. Depending on the interest in your chosen location there may be a delay of up to 24 hours until the start of the actual trip!\n" %(sender))
+                        ## During trips
+                        else:
+                            self.irc.send("PRIVMSG %s :To be done\n" %(sender))
                 elif not administrative:
                     self.irc.send("PRIVMSG %s :This is not a recognized command, try !help to see available commands.\r\n" %(sender))
                 self.refresh_hunters()
