@@ -25,6 +25,8 @@ class Safari_bot:
         self.equipment_file="equipment.txt"
         self.destination_file="planets.txt"
         self.content_file="content.txt"
+        self.difficulties={1:[2,2,2,2],2:[5,2,2,2],3:[15,3,3,2],
+                           4:[20,3,3,2],5:[30,3,4,2]}
 
     def connect(self):
         ## Connect to server
@@ -128,6 +130,23 @@ class Safari_bot:
             self.irc.send("PRIVMSG %s : %-{offset}s\t%s\n".format(offset=off)
                      %(sender,'%d) ' %(w)+self.equipment[t][w]['name'],''.join(['%-12d' %(p) for p in self.equipment[t][w]['properties']])))
 
+    ## List party stats
+    def list_party(self,sender):
+        trip=self.trips[self.hunters[sender]['trip']]
+        off=4+max([len(member) for member in trip['party']])
+        self.irc.send("PRIVMSG %s :PARTY STATS:\n" %(sender))
+        self.irc.send("PRIVMSG %s : %-{offset}s\t%s\n".format(offset=off)
+                 %(sender,'Name',''.join(['%-12s' %(x) for x in self.properties])))
+        for m in range(int(trip['size'])):
+            if m<len(trip['party']):
+                self.irc.send("PRIVMSG %s : %-{offset}s\t%s\n".format(offset=off)
+                 %(sender,trip['party'][m],''.join(['%-12d' %(x) for x in trip['properties'][trip['party'][m]]])))
+            else:
+                self.irc.send("PRIVMSG %s : %-{offset}s\t%s\n".format(offset=off)
+                     %(sender,'(empty)',''.join(['%-12d' %(0) for x in range(len(self.properties))])))
+        self.irc.send("PRIVMSG %s : %-{offset}s\t%s\n".format(offset=off)
+         %(sender,'TOTAL',''.join(['%-12d' %(sum([trip['properties'][m][x] for m in trip['properties']])) for x in range(len(self.properties))])))
+        
     ## List equipped items for status
     def list_personal(self,sender):
         off=4+max([len(self.equipment[t][self.hunters[sender]['equipment'][t]]['name']) for t in self.hunters[sender]['equipment']])
@@ -154,6 +173,7 @@ class Safari_bot:
         if command=='arrive':
             if hunter not in self.trips[self.hunters[hunter]['trip']]['actions']:
                 self.trips[self.hunters[hunter]['trip']]['actions'][hunter]='arrive'
+                self.trips[self.hunters[hunter]['trip']]['properties'][hunter]=[sum([self.equipment[t][self.hunters[hunter]['equipment'][t]]['properties'][x] for t in ['weapons','tools','suits']]) for x in range(len(self.properties))]
             self.irc.send("PRIVMSG %s : %d more hunters have to join before the trip can start.\n" %(hunter,int(self.trips[self.hunters[hunter]['trip']]['size'])-len(self.trips[self.hunters[hunter]['trip']]['actions'])))
             if not self.trips[self.hunters[hunter]['trip']]['force']:
                 self.irc.send("PRIVMSG %s : This trip will also start automatically in %d hours!\n"
@@ -170,7 +190,18 @@ class Safari_bot:
 
     ## Fill party up to preset size with balanced GSC staff
     def back_up(self,code):
-        pass
+        if int(self.trips[code]['size'])==len(self.trips[code]['party']):
+            return 0
+        self.trips[code]['back-up']=int(self.trips[code]['size'])-len(self.trips[code]['party'])
+        for hired in range(self.trips[code]['back-up']):
+            ## ONLY FIREPOWER IS CUMULATIVE!!!
+            party_stats=dict(zip(self.properties,[sum([self.trips[code]['properties'][m][x] for m in self.trips[code]['properties']]) for x in range(len(self.properties))]))
+            ## Determine party supply needs
+            if party_stats['Supply']<=0 or party_stats['Supply']*5./int(self.trips[code]['size'])<5:
+                add supply carrier
+            ## Determine party tracking needs for organized trips
+            if self.trips[code]['force'] and self.do_check(code,'Tracking')<33:
+                add tracker
 
     def parse(self,buff,free_trip=False):
         message=buff.split('\r\n',1)[0]
@@ -255,12 +286,12 @@ class Safari_bot:
                                               'destination':destination,'game':game,
                                               'size':self.orders[args[0]]['organized'],
                                               'back-up':self.orders[args[0]]['back-up'],
-                                              'started_on':0,'actions':{}}
+                                              'started_on':0,'actions':{},'properties':{}}
                         elif 'random%d' %(destination) not in self.trips:
                             self.trips['random%d' %(destination)]={'force':0,'party':[],'events':[destname+'_arrival'],
                                               'destination':destination,'game':0,
                                               'size':self.destinations['destination'][destination]['difficulty'],
-                                              'back-up':True,'started_on':0,'actions':{}}
+                                              'back-up':True,'started_on':0,'actions':{},'properties':{}}
                         ## Set destination and game for the buyer to remove confusion
                         self.hunters[args[0]]['selected']['destination']=self.destlist.index(args[1].lower())+1
                         self.hunters[args[0]]['selected']['game']=self.gamelist.index(args[2].lower())+1
@@ -447,7 +478,7 @@ class Safari_bot:
                                 self.irc.send("PRIVMSG %s :You can now use the `!start start_code` command to travel to your destination. Depending on the interest in your chosen location there may be a delay of up to 24 hours until the start of the actual trip!\n" %(sender))
                         ## During trips
                         else:
-                            self.irc.send("PRIVMSG %s :To be done\n" %(sender))
+                            self.list_party(sender)
                 elif not administrative:
                     self.irc.send("PRIVMSG %s :This is not a recognized command, try !help to see available commands.\r\n" %(sender))
                 self.refresh_hunters()
