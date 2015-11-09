@@ -1,6 +1,6 @@
-Load events from file with identifiers
+generic trips - 100 Gizka challenge, 100 days challenge?
+Series of challenges for trip length?
 Select event from possible based on planet/terrain/game
-Add event identifier to events list for trip
 
 Set dest and game to 0 after trip end!
 Manage a list of online hunters to send party messages to.

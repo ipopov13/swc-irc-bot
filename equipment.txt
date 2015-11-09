@@ -1,5 +1,5 @@
 Type	Name	Firepower	Stealth	Tracking	Resilience	Supplies
-weapons	X-45 Sniper Rifle	7	0	0	-1	0
+weapons	X-45 Sniper Rifle	7	-1	0	-1	0
 weapons	Bowcaster	8	-2	0	0	0
 weapons	Valken-38 Carbine	5	0	0	0	0
 weapons	Scout Blaster	3	2	0	0	0

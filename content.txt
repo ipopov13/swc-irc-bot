@@ -10,6 +10,13 @@ Ithor_arrival:-  be a small docking bay with space for a single shuttle. The cra
 Ithor_arrival:-  full with jumpy looking tourists with odd shaped bags. Just like the one
 Ithor_arrival:-  you are carrying...
 
+Ithor_start:-      Finally the shuttle is full and the pilot closes the hatch and releases
+Ithor_start:-  the clamps. The vessel dives sharply, plunging into the low clowds. The
+Ithor_start:-  vast jungles of Ithor await you!
+
+Ithor_test:-  Test.
+
+
 help0:-      Welcome to the office of the GSC! Here at the GALACTIC SAFARI
 help0:-  COMPANY we provide interested individuals with the means to explore
 help0:-  the most interesting worlds of the Galaxy and hunt the most dangerous
