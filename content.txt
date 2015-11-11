@@ -14,7 +14,13 @@ Ithor_start:-      Finally the shuttle is full and the pilot closes the hatch an
 Ithor_start:-  the clamps. The vessel dives sharply, plunging into the low clowds. The
 Ithor_start:-  vast jungles of Ithor await you!
 
-Ithor_test:-  Test.
+Ithor_event_patrol@h:-      You are pushing through the undergrowth when suddenly a siren starts
+Ithor_event_patrol@h:-  somewhere close nearby. The guide gives you the signal to "hide-without-
+Ithor_event_patrol@h:-  objection". On Ithor this can mean only one thing - a poacher patrol is
+Ithor_event_patrol@h:-  nearby! The only thing you can do is hide and use any countermeasure at
+Ithor_event_patrol@h:-  your disposal, as being caught hunting in this jungle means a lifetime
+Ithor_event_patrol@h:-  ban from the planet and all of its flying cities, not to mention the
+Ithor_event_patrol@h:-  chance of being shot on sight!
 
 
 help0:-      Welcome to the office of the GSC! Here at the GALACTIC SAFARI

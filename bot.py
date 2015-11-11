@@ -167,6 +167,7 @@ class Safari_bot:
         self.irc.send("PRIVMSG %s : %-{offset}s\t%s\n".format(offset=off)
                  %(sender,'TOTAL',''.join(['%-12d' %(sum([self.equipment[t][self.hunters[sender]['equipment'][t]]['properties'][x] for t in ['weapons','tools','suits']])) for x in range(len(self.properties))])))
 
+    ## Create codes for trips
     def gen_code(self,hunter):
         p=random.randint(0,len(hunter)-3)
         code=hunter[p:p+3]+str(random.randint(100000,999999))
@@ -234,6 +235,10 @@ class Safari_bot:
         ## Lower supplies
         pass
 
+    ## Events are marked with the planet name (for planetary and game events)
+    ## or terrain letter (for terrain) +"_event". Possible actions are marked
+    ## with @ and listed with a single letter. Actions are:
+    ## (h)ide, (f)ight, (t)rack, (s)urvive, h(e)al, f(o)rage
     def select_event(self,code):
         self.trips[code]['events'].append('Ithor_test')
         pass
