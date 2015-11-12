@@ -29,6 +29,14 @@ class Safari_bot:
         self.difficulties={1:[1,2,2,2],2:[2,2,2,2],3:[4,3,3,2],
                            4:[8,3,3,3],5:[15,3,4,3]}
         self.refresh_data()
+        self.dest_games={}
+        self.game_freqs={}
+        self.terr_games={}
+        for g in self.destinations['game']:
+            for t in self.destinations['game'][g]['terrains'].split('/'):
+                self.terr_games[t]=self.terr_games.get(t,[])+[self.destinations['game'][g]['name']]
+            self.dest_games[self.destinations['game'][g]['planet']]=self.dest_games.get(self.destinations['game'][g]['planet'],[])+[self.destinations['game'][g]['name']]
+            self.game_freqs[self.destinations['game'][g]['name']]=int(self.destinations['game'][g]['frequency'])
         self.load_hunters()
         self.GSChunters={"Gamorrean guide":{'equipment':{'weapons':12,'tools':5,'suits':2}},
                       "Squib tracker":{'equipment':{'weapons':13,'tools':3,'suits':6}},
@@ -190,6 +198,8 @@ class Safari_bot:
 
     ## Take hunter trip commands
     ## The last one automatically receives the event outcome and the next event text
+    ## Commands are: (h)ide, (f)ight, (t)rack, (s)urvive, h(e)al, f(o)rage, rest
+    ## Heal/forage/rest are available whenever hide/fight/survive are NOT available
     def trip_step(self,hunter,command=''):
         if command=='arrive':
             self.trips[self.hunters[hunter]['trip']]['states'][hunter]=0
@@ -235,14 +245,40 @@ class Safari_bot:
         ## Lower supplies
         pass
 
-    ## Events are marked with the planet name (for planetary and game events)
+    ## Events are marked with the planet/game name (for planetary and game events)
     ## or terrain letter (for terrain) +"_event". Possible actions are marked
     ## with @ and listed with a single letter. Actions are:
     ## (h)ide, (f)ight, (t)rack, (s)urvive, h(e)al, f(o)rage
     def select_event(self,code):
+        possible=[]
+        games=[]
         for event in self.content:
-            
+            ## Take only event starts, not resolves/fails
+            if '_event_' not in event:
+                continue
+            ## Add planet/terrain events
+            if event.split('_')[0]==self.destinations['destination'][self.trips[code]['destination']]['name'] or\
+               event.split('_')[0]==self.trips[code]['current_terrain']:
+                possible+=[event]*5
+            ## Add game(+3)/other events based on current terrain (/2 if no match)
+            elif event.split('_')[0] in self.dest_games[self.destinations['destination'][self.trips[code]['destination']]['name']]:
+                possible+=[event]*self.game_freqs[event.split('_')[0]]['frequency']/(1 if event.split('_')[0] in self.terr_games[self.trips[code]['current_terrain']] else 2)
+                games.append(event)
+                if event.split('_')[0]==self.destinations['game'][self.trips[code]['game']]['name']:
+                    possible+=[event]*3
+        event=random.choice(possible)
+        ## Check to see if it's the actual creature or just tracks and
+        ## make a dummy tracking event that changes the "tracked" trip property
+        if event in games:
+            pass
+            '%s_event_tracking@t' %(event.split('_')[0])
         self.trips[code]['events'].append(event)
+        ## Check to see if terrain has changed here, organized trips have a low
+        ## chance to go to a non-game terrain and high chance to go back to a
+        ## game terrain; random trips have random seelction based on terrain
+        ## sequence of planet
+        pass
+        ## Automatically update state and select actions for back-up here!
         pass
 
     ## Main skill check formula (Gompertz)
@@ -363,14 +399,18 @@ class Safari_bot:
                                               'size':self.orders[args[0]]['organized'],
                                               'back-up':self.orders[args[0]]['back-up'],
                                               'started_on':0,'actions':{},'properties':{},
-                                              'supplies':0}
+                                              'supplies':0,'terrains':self.destinations['destination'][destination]['terrains'].split('/'),
+                                              'current_terrain':self.destinations['game'][game]['terrains'].split('/')[0],
+                                              'tracked':{}}
                         elif 'random%d' %(destination) not in self.trips:
                             self.trips['random%d' %(destination)]={'force':0,'party':[],'events':[destname+'_arrival'],
                                               'resolves':[],'states':{},
                                               'destination':destination,'game':0,
                                               'size':self.destinations['destination'][destination]['difficulty'],
                                               'back-up':True,'started_on':0,'actions':{},'properties':{},
-                                              'supplies':0}
+                                              'supplies':0,'terrains':self.destinations['destination'][destination]['terrains'].split('/'),
+                                              'current_terrain':random.choice(self.destinations['destination'][destination]['terrains'].split('/')),
+                                              'tracked':{}}
                         ## Set destination and game for the buyer to remove confusion
                         self.hunters[args[0]]['selected']['destination']=self.destlist.index(args[1].lower())+1
                         self.hunters[args[0]]['selected']['game']=self.gamelist.index(args[2].lower())+1

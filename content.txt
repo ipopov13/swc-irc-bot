@@ -86,8 +86,7 @@ help1:-  the specific creature you are hunting during the trip, depending on
 help1:-  how rare the creature is. No experience is awarded if the creature is
 help1:-  not encountered and successfuly defeated/captured!
 help1:-      2) An organized group with a maximum size based on the planet and
-help1:-  specific creature you selected. The encounter is guaranteed, if the
-help1:-  group manages to survive long enough. You select the actual group size.
+help1:-  specific creature you selected. You select the actual group size.
 help1:-      3) Organized groups with GSC back-up. Same as the above, except
 help1:-  that the group will be complemented by Company hunters, guides or
 help1:-  trackers up to the requested size in the case of forced departure

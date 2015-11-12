@@ -54,7 +54,7 @@ CHANCE_TO_USE_SUPPLIES_PER_EVENT = number_players * 20%
 
 EVENT selection rules:
 1) Organized groups have a fixed chance to meet the QUARRY, starting at QUARRY_CHANCE and increased with every successful encounter.
-2) If no QUARRY is encountered or it's a random group teh next event is chosen randomly from all applicable of the following:
+2) If no QUARRY is encountered or it's a random group the next event is chosen randomly from all applicable of the following:
 - The available PLANETARY events.
 - The available TERRAIN (RESILIENCE/PEAEFUL) events (matching the QUARRY for organized; all TERRAINs for random).
 - If the previous event was TERRAIN (either RESILIENCE or PEAEFUL) - the available OTHER creature events that match that TERRAIN.
