@@ -22,6 +22,32 @@ Ithor_event_patrol@h:-  your disposal, as being caught hunting in this jungle me
 Ithor_event_patrol@h:-  ban from the planet and all of its flying cities, not to mention the
 Ithor_event_patrol@h:-  chance of being shot on sight!
 
+Ithor_event_poachers@fh:-      Some time after dawn you break down your camp and head on towards
+Ithor_event_poachers@fh:-  the next waypoint of the trip. You take care not to leave anything
+Ithor_event_poachers@fh:-  behind - there are patrols scanning the plains and jungles of Ithor
+Ithor_event_poachers@fh:-  for poachers at all times. As the campsite disappears behind you, you
+Ithor_event_poachers@fh:-  start feeling a low vibration in the ground beneath your feet. A minute
+Ithor_event_poachers@fh:-  later the whole group stops and tries to determine the source of the
+Ithor_event_poachers@fh:-  tremors that are now starting to show as a noise too, and making plants
+Ithor_event_poachers@fh:-  around you wobble.
+Ithor_event_poachers@fh:-      Suddenly a large machine appears between the trees on the next ridge,
+Ithor_event_poachers@fh:-  ladden with packs, dead animals and armed sentients. They do not bear
+Ithor_event_poachers@fh:-  any markings, but you need none - they are poachers. You'll have to
+Ithor_event_poachers@fh:-  either destroy them or hide and hope they do not notice you!
+
+Ithor_event_stampede@s:-      Some time after dawn you break down your camp and head on towards
+Ithor_event_stampede@s:-  the next waypoint of the trip. You take care not to leave anything
+Ithor_event_stampede@s:-  behind - there are patrols scanning the plains and jungles of Ithor
+Ithor_event_stampede@s:-  for poachers at all times. As the campsite disappears behind you, you
+Ithor_event_stampede@s:-  start feeling a low vibration in the ground beneath your feet. A minute
+Ithor_event_stampede@s:-  later the whole group stops and tries to determine the source of the
+Ithor_event_stampede@s:-  tremors that are now starting to show as a noise too, and making plants
+Ithor_event_stampede@s:-  around you wobble.
+Ithor_event_stampede@s:-      Suddenly animals start appearing all around you, bodies of shape,
+Ithor_event_stampede@s:-  size, and colour that you never dreamed of, streaming and bumping into
+Ithor_event_stampede@s:-  one another as they push forward. They are all headed in a single
+Ithor_event_stampede@s:-  direction and their sheer volume drowns your group in seconds, scattering
+Ithor_event_stampede@s:-  you around. You have to find cover or another way to survive this stampede!
 
 help0:-      Welcome to the office of the GSC! Here at the GALACTIC SAFARI
 help0:-  COMPANY we provide interested individuals with the means to explore

@@ -240,7 +240,9 @@ class Safari_bot:
     ## with @ and listed with a single letter. Actions are:
     ## (h)ide, (f)ight, (t)rack, (s)urvive, h(e)al, f(o)rage
     def select_event(self,code):
-        self.trips[code]['events'].append('Ithor_test')
+        for event in self.content:
+            
+        self.trips[code]['events'].append(event)
         pass
 
     ## Main skill check formula (Gompertz)
