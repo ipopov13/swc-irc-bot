@@ -14,12 +14,13 @@ class Safari_bot:
         self.botpass='eaten-b4-li0nes'
         self.botmail='loki@mail.bg'
         self.equipment={'weapons':{},'tools':{},'suits':{}}
-        self.destinations={'destination':{},'game':{}}
+        self.destinations={'destination':{0:{'name':'none'}},
+                           'game':{0:{'frequency':0,'planet':'','terrains':'','name':'none'}}}
         self.destlist=[]
         self.gamelist=[]
         self.properties=[]
         self.content={}
-        self.hunter={}
+        self.hunters={}
         self.orders={}
         self.trips={}
         self.data_file="data.dat"
@@ -65,9 +66,9 @@ class Safari_bot:
                 self.hunters=pickle.load(infile)
                 self.orders=pickle.load(infile)
                 self.trips=pickle.load(infile)
-        except IOError:
+        except IOError or EOFError:
             with open(self.data_file,'wb') as outfile:
-                print "Database file not found, recreated it."
+                print "Database file not found or empty, recreated it."
 
     def refresh_hunters(self):
         with open(self.data_file,'wb') as outfile:
@@ -128,7 +129,7 @@ class Safari_bot:
         self.irc.send("PRIVMSG %s :This is the list of available %s%s. Choose one with `!%s %s_number`.\n"
                       %(sender,t,(' for %s' %(self.destinations['destination'][self.hunters[sender]['selected']['destination']]['name'])) if t=='game' else 's',t,t))
         self.irc.send("PRIVMSG %s : === %s%s ===\n" %(sender,t.capitalize(),'' if t=='game' else 's'))
-        for w in range(1,len(self.destinations[t])+1):
+        for w in range(1,len(self.destinations[t])):
             if t=='game' and self.destinations[t][w]['planet']!=self.destinations['destination'][self.hunters[sender]['selected']['destination']]['name']:
                 continue
             self.irc.send("PRIVMSG %s : %d) %s: %s  Difficulty: %s%s\n"
@@ -185,6 +186,8 @@ class Safari_bot:
         return code
 
     def relay_event(self,hunter,event_num,resolve=False,resolve_only=False):
+        ## Add tracking event check here to accomodate all creatures!
+        pass
         if not resolve_only:
             self.irc.send("PRIVMSG %s :-  Hunting %ss on %s: DAY %d\n"
                           %(hunter,self.destinations['game'][self.hunters[hunter]['selected']['game']]['name'].lower(),
@@ -196,59 +199,124 @@ class Safari_bot:
         if resolve or resolve_only:
             self.relay_content(hunter,self.trips[self.hunters[hunter]['trip']]['resolves'][event_num])
 
+    ## Give commands for current trip step
+    ## Commands are: (h)ide, (f)ight, (t)rack, (s)urvive, heal, forage, rest
+    ## Heal/forage/rest are available whenever hide/fight/survive are NOT available
+    def list_commands(self,hunter,relay=False):
+        coms={'f':'fight','h':'hide','t':'track','s':'survive'}
+        com_chars=self.trips[self.hunters[hunter]['trip']]['events'][-1].split('@')[-1]
+        if com_chars.replace('t',''):
+            commands=[coms[x] for x in com_chars]
+        else:
+            commands=[coms[x] for x in com_chars]+['heal','rest','forage']
+        if relay:
+            self.irc.send("PRIVMSG %s : Available commands: !%s\n"
+                          %(hunter,', !'.join(commands)))
+        else:
+            return commands
+
     ## Take hunter trip commands
     ## The last one automatically receives the event outcome and the next event text
-    ## Commands are: (h)ide, (f)ight, (t)rack, (s)urvive, h(e)al, f(o)rage, rest
-    ## Heal/forage/rest are available whenever hide/fight/survive are NOT available
     def trip_step(self,hunter,command=''):
+        ## Hunter joins trip
         if command=='arrive':
+            self.trips[self.hunters[hunter]['trip']]['party'].append(hunter)
             self.trips[self.hunters[hunter]['trip']]['states'][hunter]=0
             self.trips[self.hunters[hunter]['trip']]['properties'][hunter]=[sum([self.equipment[t][self.hunters[hunter]['equipment'][t]]['properties'][x] for t in ['weapons','tools','suits']]) for x in range(len(self.properties))]
             self.trips[self.hunters[hunter]['trip']]['supplies']+=self.trips[self.hunters[hunter]['trip']]['properties'][hunter][self.properties.index('Supplies')]
-        state=self.trips[self.hunters[hunter]['trip']]['states'][hunter]
-        if state<len(self.trips[self.hunters[hunter]['trip']]['events'])-1:
-            self.relay_event(hunter,state,resolve=True)
-            self.trips[self.hunters[hunter]['trip']]['states'][hunter]+=1
-            self.relay_event(hunter,state+1)
-        else:
-            self.relay_event(hunter,state)
-##        self.irc.send("PRIVMSG %s :-  Hunting %ss on %s: DAY %d\n"
-##                      %(hunter,self.destinations['game'][self.hunters[hunter]['selected']['game']]['name'].lower(),
-##                        self.destinations['destination'][self.hunters[hunter]['selected']['destination']]['name'],
-##                        len(self.trips[self.hunters[hunter]['trip']]['events'])))
-##        self.relay_content(hunter,self.trips[self.hunters[hunter]['trip']]['events'][-1])
+        ## Relay events for !trip&!start commands
+        if command in ['arrive','']:
+            state=self.trips[self.hunters[hunter]['trip']]['states'][hunter]
+            if state<len(self.trips[self.hunters[hunter]['trip']]['events'])-1:
+                self.relay_event(hunter,state,resolve=True)
+                self.trips[self.hunters[hunter]['trip']]['states'][hunter]+=1
+                self.relay_event(hunter,state+1)
+            else:
+                self.relay_event(hunter,state)
         ## Record actions
         if command and hunter not in self.trips[self.hunters[hunter]['trip']]['actions']:
             self.trips[self.hunters[hunter]['trip']]['actions'][hunter]=command
-        ## Check starting conditions after arrival
+        ## Announce starting conditions after arrival
         if len(self.trips[self.hunters[hunter]['trip']]['events'])==1 and int(self.trips[self.hunters[hunter]['trip']]['size'])-len(self.trips[self.hunters[hunter]['trip']]['actions'])>0:
             self.irc.send("PRIVMSG %s : %d more hunters have to join before the trip can start.\n" %(hunter,int(self.trips[self.hunters[hunter]['trip']]['size'])-len(self.trips[self.hunters[hunter]['trip']]['actions'])))
             if not self.trips[self.hunters[hunter]['trip']]['force']:
-                if 24-int((time.time()-self.trips[self.hunters[hunter]['trip']]['started_on'])/3600)<=0:
+                if 24-int((time.time()-self.trips[self.hunters[hunter]['trip']]['started_on'])/3600)<=25:
                     self.back_up(self.hunters[hunter]['trip'])
+                    ## Test time delayed trip start!
+                    pass
+                    if command=='':
+                        self.start_random(self.hunters[hunter]['trip'])
                 else:
                     self.irc.send("PRIVMSG %s : This trip will also start automatically in %d hours!\n"
                                   %(hunter,24-int((time.time()-self.trips[self.hunters[hunter]['trip']]['started_on'])/3600)))
+        ## Initiate event resolution when everyone has acted
         if len(self.trips[self.hunters[hunter]['trip']]['actions'])==int(self.trips[self.hunters[hunter]['trip']]['size']):
             self.resolve_event(self.hunters[hunter]['trip'])
             self.relay_event(hunter,self.trips[self.hunters[hunter]['trip']]['states'][hunter],resolve_only=True)
-            self.select_event(self.hunters[hunter]['trip'])
             self.trips[self.hunters[hunter]['trip']]['states'][hunter]+=1
             self.trips[self.hunters[hunter]['trip']]['actions']={}
-            ## Do !trip for the current hunter
-            self.parse(":%s! PRIVMSG %s :!trip\r\n" %(hunter,self.botnick))
+            if not self.trips[self.hunters[hunter]['trip']]['events'][-1].startswith('ended'):
+                self.select_event(self.hunters[hunter]['trip'])
+            self.relay_event(hunter,self.trips[self.hunters[hunter]['trip']]['states'][hunter])
+        ## Remove trip if all hunters have seen the ending
+        if self.trips[self.hunters[hunter]['trip']]['events'][-1].startswith('ended'):
+            code=self.hunters[hunter]['trip']
+            self.return_hunter(hunter)
+            for state in self.trips[code]['states'].values():
+                if state<len(self.trips[code]['events'])-1:
+                    break
+            else:
+                self.trips.pop(code)
+
+    def start_random(self,trip_name):
+        new_trip=self.gen_code(trip_name)
+        self.trips[new_trip]=self.trips[trip_name].copy()
+        self.trips.pop(trip_name)
+        for member in self.trips[new_trip]['party']:
+            ## Do only players
+            if ' ' not in member:
+                self.hunters[member]['trip']=new_trip
+                self.orders[member]['code']=new_trip
 
     def resolve_event(self,code):
         if self.trips[code]['events'][-1].endswith('_arrival'):
             self.trips[code]['resolves'].append(self.trips[code]['events'][-1].replace('_arrival','_start'))
-        ## Check if trip ends here!
+        else:
+            self.trips[code]['resolves'].append('Ithor_start')
+        ## Give out XP rewards here
+        pass
+        ## If event fails add injuries in trip
+        ## If double injury - add hunter injury and end trip
+        pass
         ## Lower supplies
+        self.trips[code]['supplies']-=5
+        ## Check if trip ends here due to injuries/supply shortage/game caught
+        ## content tags: ended_supplies/ended_injury/organized_game/random_game
+        if self.trips[code]['supplies']<0:
+            self.trips[code]['events'].append('ended_supplies')
         pass
 
+    ## Hunter has reached a trip ending
+    def return_hunter(self,hunter):
+        ## Check if player has a standing order and reset dest/game
+        if hunter in self.orders and self.orders[hunter]['code']!=self.hunters[hunter]['trip']:
+            self.hunters[hunter]['selected']['destination']=self.orders[hunter]['destination']
+            self.hunters[hunter]['selected']['game']=self.orders[hunter]['game']
+        else:
+            self.hunters[hunter]['selected']['destination']=0
+            self.hunters[hunter]['selected']['game']=0
+            try:
+                self.orders.pop(hunter)
+            except KeyError:
+                pass
+        ## Clear trip
+        self.hunters[hunter]['trip']=0
+
     ## Events are marked with the planet/game name (for planetary and game events)
-    ## or terrain letter (for terrain) +"_event". Possible actions are marked
-    ## with @ and listed with a single letter. Actions are:
-    ## (h)ide, (f)ight, (t)rack, (s)urvive, h(e)al, f(o)rage
+    ## or terrain letter (for terrain) +"_event_". Possible actions start
+    ## with @ and are listed at the end with a single letter. Actions are:
+    ## (h)ide, (f)ight, (t)rack, (s)urvive
+    ## (heal, forage, and rest are implied whenever h/f/s are not available!)
     def select_event(self,code):
         possible=[]
         games=[]
@@ -262,24 +330,62 @@ class Safari_bot:
                 possible+=[event]*5
             ## Add game(+3)/other events based on current terrain (/2 if no match)
             elif event.split('_')[0] in self.dest_games[self.destinations['destination'][self.trips[code]['destination']]['name']]:
-                possible+=[event]*self.game_freqs[event.split('_')[0]]['frequency']/(1 if event.split('_')[0] in self.terr_games[self.trips[code]['current_terrain']] else 2)
+                possible+=[event]*(self.game_freqs[event.split('_')[0]]['frequency']+self.trips[code]['tracked'].get(event.split('_')[0],0))/(1 if event.split('_')[0] in self.terr_games[self.trips[code]['current_terrain']] else 2)
                 games.append(event)
                 if event.split('_')[0]==self.destinations['game'][self.trips[code]['game']]['name']:
                     possible+=[event]*3
+        ## Choose event at random. If 50% or more party members are injured reroll until
+        ## a non-dangerous event is chosen (group tries to rest)!
         event=random.choice(possible)
+        if len(self.trips[code]['injured'])*2>len(self.trips[code]['party']):
+            while {'f','h','s'}&set(event.split('@')[-1]):
+                event=random.choice(possible)
         ## Check to see if it's the actual creature or just tracks and
         ## make a dummy tracking event that changes the "tracked" trip property
         if event in games:
-            pass
-            '%s_event_tracking@t' %(event.split('_')[0])
+            if random.randint(1,10)>self.game_freqs[event.split('_')[0]]['frequency']+self.trips[code]['tracked'].get(event.split('_')[0],0):
+                event='%s_event_tracking@t' %(event.split('_')[0])
         self.trips[code]['events'].append(event)
         ## Check to see if terrain has changed here, organized trips have a low
         ## chance to go to a non-game terrain and high chance to go back to a
-        ## game terrain; random trips have random seelction based on terrain
+        ## game terrain; random trips have random selection based on terrain
         ## sequence of planet
-        pass
+        terr_index=self.trips[code]['terrains'].index(self.trips[code]['current_terrain'])
+        if self.trips[code]['force'] and\
+           self.destinations['game'][self.trips[code]['game']]['name'] not in self.terr_games[self.trips[code]['current_terrain']]:
+            self.trips[code]['current_terrain']=self.destinations['game'][self.trips[code]['game']]['terrains'][0]
+        else:
+            self.trips[code]['current_terrain']=random.choice(self.trips[code]['terrains'][max([0,terr_index-1]):terr_index+2])
         ## Automatically update state and select actions for back-up here!
-        pass
+        injured_players=sum([(1 if ' ' not in member else 0) for member in self.trips[code]['injured']])
+        available_actions=event.split('@')[-1]
+        for member in self.trips[code]['party']:
+            ## Check if it's a back-up NPC
+            if ' ' in member:
+                ## Dangerous events
+                if {'f','h','s'}&set(available_actions):
+                    if 'f' in available_actions:
+                        action='fight'
+                    elif 's' in available_actions:
+                        action='survive'
+                    else:
+                        action='hide'
+                ## tracking events for uninjured tracker NPCs
+                elif 't' in available_actions and 'tracker' in member\
+                     and member not in self.trips[code]['injured']:
+                    action='track'
+                ## Help injured players (always) or if not injured help injured NPCs
+                elif injured_players or (self.trips[code]['injured'] and member not in self.trips[code]['injured']):
+                    action='heal'
+                ## Else rest if injured
+                elif member in self.trips[code]['injured']:
+                    action='rest'
+                ## Else try to prolong trip
+                else:
+                    action='forage'
+                self.trips[code]['actions'][member]=action
+                self.trips[code]['states'][member]+=1
+                
 
     ## Main skill check formula (Gompertz)
     def do_check(self,difficulty,skill,t):
@@ -311,6 +417,7 @@ class Safari_bot:
                         break
             self.trips[code]['party'].append(back_up)
             self.trips[code]['actions'][back_up]='arrive'
+            self.trips[code]['states'][back_up]=1
             self.trips[code]['properties'][back_up]=[sum([self.equipment[t][self.hunters[back_up]['equipment'][t]]['properties'][x] for t in ['weapons','tools','suits']]) for x in range(len(self.properties))]
             self.trips[code]['supplies']+=self.trips[code]['properties'][back_up][self.properties.index('Supplies')]
 
@@ -394,7 +501,7 @@ class Safari_bot:
                         ## Generate trip
                         if self.orders[args[0]]['organized']:
                             self.trips[code]={'force':force,'party':[],'events':[destname+'_arrival'],
-                                              'resolves':[],'states':{},
+                                              'resolves':[],'states':{},'injured':{},
                                               'destination':destination,'game':game,
                                               'size':self.orders[args[0]]['organized'],
                                               'back-up':self.orders[args[0]]['back-up'],
@@ -404,9 +511,9 @@ class Safari_bot:
                                               'tracked':{}}
                         elif 'random%d' %(destination) not in self.trips:
                             self.trips['random%d' %(destination)]={'force':0,'party':[],'events':[destname+'_arrival'],
-                                              'resolves':[],'states':{},
+                                              'resolves':[],'states':{},'injured':{},
                                               'destination':destination,'game':0,
-                                              'size':self.destinations['destination'][destination]['difficulty'],
+                                              'size':int(self.destinations['destination'][destination]['difficulty']),
                                               'back-up':True,'started_on':0,'actions':{},'properties':{},
                                               'supplies':0,'terrains':self.destinations['destination'][destination]['terrains'].split('/'),
                                               'current_terrain':random.choice(self.destinations['destination'][destination]['terrains'].split('/')),
@@ -440,8 +547,16 @@ class Safari_bot:
                     self.relay_content(sender,'help2')
             ## Handle hunter commands
             elif sender in self.hunters:
+                ## Do trip event commands with event check
+                if self.hunters[sender]['trip'] and message.split('!')[-1] in\
+                   ['fight','hide','survive','track','heal','rest','forage']:
+                    command=message.split('!')[-1]
+                    if command in self.list_commands(sender):
+                        self.trip_step(sender,command)
+                    else:
+                        self.list_commands(sender,relay=True)
                 ## describe trip step with !trip
-                if self.hunters[sender]['trip'] and message.endswith(':!trip'):
+                elif self.hunters[sender]['trip'] and message.endswith(':!trip'):
                     ## Random groups are time checked here and filled up with back-up
                     self.trip_step(sender)
                 ## Start trip
@@ -467,7 +582,6 @@ class Safari_bot:
                                 self.hunters[sender]['trip']=codes[0]
                                 self.hunters[sender]['selected']['destination']=self.trips[codes[0]]['destination']
                                 self.hunters[sender]['selected']['game']=self.trips[codes[0]]['game']
-                                self.trips[codes[0]]['party'].append(sender)
                                 self.trip_step(sender,'arrive')
                             else:
                                 self.irc.send("PRIVMSG %s :You have already started a trip! Use !trip to see your progress.\n" %(sender))
@@ -475,18 +589,13 @@ class Safari_bot:
                         elif sender in self.orders and codes[0]==self.orders[sender]['code']:
                             trip_name='random%d' %(self.orders[sender]['destination'])
                             self.hunters[sender]['trip']=trip_name
-                            self.trips[trip_name]['party'].append(sender)
                             ## Note trip start to count 24 hours
                             if not self.trips[trip_name]['started_on']:
                                 self.trips[trip_name]['started_on']=time.time()
                             self.trip_step(sender,'arrive')
-                            ## if party size is reached separate trip, change member trip names
+                            ## if party size is reached separate trip, change member trip names&codes
                             if len(self.trips[trip_name]['party'])==self.trips[trip_name]['size']:
-                                new_trip=self.gen_code(sender)
-                                self.trips[new_trip]=self.trips[trip_name].copy()
-                                self.trips.pop(trip_name)
-                                for member in self.trips[new_trip]['party']:
-                                    self.hunters[member]['trip']=new_trip
+                                self.start_random(trip_name)
                             if free_trip:
                                 return 0
                         ## Handle free trips
@@ -538,7 +647,7 @@ class Safari_bot:
                                     else:
                                         self.irc.send("PRIVMSG %s :Check !status for further instructions!\n" %(sender))
                             else:
-                                self.irc.send("PRIVMSG %s :This %s identification code is not in our database! Current codes range from 1 to %d.\n" %(sender,t,len(self.destinations[t])))
+                                self.irc.send("PRIVMSG %s :This %s identification code is not in our database! Current codes range from 1 to %d.\n" %(sender,t,len(self.destinations[t])-1))
                         else:
                             self.list_destinations(sender,t)
                 ## Handle status requests

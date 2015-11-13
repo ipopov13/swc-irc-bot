@@ -1,3 +1,16 @@
+ended_supplies:-      Unfortunately your group's supplies have reached a critical level
+ended_supplies:-  and you are forced to turn back. You should prepare better next time!
+
+ended_injury:-      A member of the group has beed injured badly and cannot continue the
+ended_injury:-  trip! The guide calls a rescue craft that takes you off the planet.
+
+organized_game:-      You have successfuly hunted your selected game! You spend the night
+organized_game:-  resting and head to the extraction point the next morning.
+
+random_game:-      You have successfuly hunted your selected game! You can now relax and
+random_game:-  have fun for the rest of the trip, or simply help the other group members
+random_game:-  do the same.
+
 Ithor_arrival:-      The sight of the bright green and blue streaks of jungles and rivers
 Ithor_arrival:-  below are by themselves something worth the trouble of getting a visa.
 Ithor_arrival:-  The fact that you are going to go down and see the lush forests up close
