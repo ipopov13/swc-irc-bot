@@ -20,7 +20,7 @@ tools	Supply Pack	0	0	0	0	20
 tools	Large Backpack	0	0	0	2	5
 tools	Tool Belt	0	1	1	2	1
 tools	Camo-field Generator	0	4	0	0	-1
-tools	Medikit	0	0	0	5	-1
+tools	Medikit	-3	0	0	8	-2
 suits	Survival Suit	0	0	0	5	2
 suits	Cargo Suit	0	-1	0	2	5
 suits	Camouflage Suit	0	5	0	0	1

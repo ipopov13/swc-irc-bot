@@ -27,8 +27,10 @@ class Safari_bot:
         self.equipment_file="equipment.txt"
         self.destination_file="planets.txt"
         self.content_file="content.txt"
-        self.difficulties={1:[1,2,2,2],2:[2,2,2,2],3:[4,3,3,2],
-                           4:[8,3,3,3],5:[15,3,4,3]}
+        self.difficulties={'fight':[1,2,4,8,15],
+                           'hide':[2,2,3,3,3],
+                           'track':[2,2,3,3,4],
+                           'survive':[2,2,2,3,3]}
         self.refresh_data()
         self.dest_games={}
         self.game_freqs={}
@@ -200,15 +202,15 @@ class Safari_bot:
             self.relay_content(hunter,self.trips[self.hunters[hunter]['trip']]['resolves'][event_num])
 
     ## Give commands for current trip step
-    ## Commands are: (h)ide, (f)ight, (t)rack, (s)urvive, heal, forage, rest
-    ## Heal/forage/rest are available whenever hide/fight/survive are NOT available
+    ## Commands are: (h)ide, (f)ight, (t)rack, (s)urvive, heal, forage
+    ## Heal/forage are available whenever hide/fight/survive are NOT available
     def list_commands(self,hunter,relay=False):
         coms={'f':'fight','h':'hide','t':'track','s':'survive'}
         com_chars=self.trips[self.hunters[hunter]['trip']]['events'][-1].split('@')[-1]
         if com_chars.replace('t',''):
             commands=[coms[x] for x in com_chars]
         else:
-            commands=[coms[x] for x in com_chars]+['heal','rest','forage']
+            commands=[coms[x] for x in com_chars]+['heal','forage']
         if relay:
             self.irc.send("PRIVMSG %s : Available commands: !%s\n"
                           %(hunter,', !'.join(commands)))
@@ -279,20 +281,52 @@ class Safari_bot:
                 self.orders[member]['code']=new_trip
 
     def resolve_event(self,code):
+        ## Begin event chain
         if self.trips[code]['events'][-1].endswith('_arrival'):
             self.trips[code]['resolves'].append(self.trips[code]['events'][-1].replace('_arrival','_start'))
+            return 0
+        ## Calculate party action stats
+        ## fight-sum; hide-average; survive-average
+        ## heal-max+helpers;track-max+helpers;forage-%sum
+        party_actions={'fight':[],'hide':[],'survive':[],
+                     'heal':[],'track':[],'forage':[]}
+        action_skills={'fight':'Firepower','hide':'Stealth','survive':'Resilience',
+                     'heal':'Resilience','track':'Tracking','forage':'Supplies'}
+        for member in self.trips[code]['actions']:
+            party_actions[self.trips[code]['actions'][member]].append(self.trips[code]['properties'][member][self.properties.index(action_skills[self.trips[code]['actions'][member]])])
+        party_actions['fight']=sum(party_actions['fight'])
+        party_actions['hide']=sum(party_actions['hide'])/float(len(party_actions['hide']))
+        party_actions['survive']=sum(party_actions['survive'])/float(len(party_actions['survive']))
+        party_actions['heal']=max(party_actions['heal'])+len(party_actions['heal'])-1
+        party_actions['track']=max(party_actions['track'])+len(party_actions['track'])-1
+        party_actions['forage']=sum(party_actions['forage'])/100.
+        ## Determine difficulty
+        if event.split('_')[0].lower() in self.gamelist:
+            difficulty=self.destinations['game'][self.gamelist.index(event.split('_')[0].lower())+1]['difficulty']
         else:
-            self.trips[code]['resolves'].append('Ithor_start')
+            difficulty=self.destinations['destination'][self.trips[code]['destination']]['difficulty']
+        ## Do checks and determine resolve tag in sequence of danger
+        ## fight->survive->hide->track|heal|forage
+        for action in ['fight','survive','hide']:
+            if party_actions[action]:
+                if random.random()<self.do_check(self.difficulties[action][difficulty],party_actions[action],action):
+                    
+        ## Register resolve tag
+        self.trips[code]['resolves'].append(resolve_tag)
+        ## Deal injuries to respective action group that failed
+        pass
         ## Give out XP rewards here
         pass
         ## If event fails add injuries in trip
         ## If double injury - add hunter injury and end trip
         pass
         ## Lower supplies
-        self.trips[code]['supplies']-=5
+        supply_chance=.2*len(self.trips[code]['party'])-party_actions['forage']
+        if random.random()<supply_chance:
+            self.trips[code]['supplies']-=1
         ## Check if trip ends here due to injuries/supply shortage/game caught
         ## content tags: ended_supplies/ended_injury/organized_game/random_game
-        if self.trips[code]['supplies']<0:
+        if self.trips[code]['supplies']<=0:
             self.trips[code]['events'].append('ended_supplies')
         pass
 
@@ -316,7 +350,7 @@ class Safari_bot:
     ## or terrain letter (for terrain) +"_event_". Possible actions start
     ## with @ and are listed at the end with a single letter. Actions are:
     ## (h)ide, (f)ight, (t)rack, (s)urvive
-    ## (heal, forage, and rest are implied whenever h/f/s are not available!)
+    ## (heal and forage are implied whenever h/f/s are not available!)
     def select_event(self,code):
         possible=[]
         games=[]
@@ -374,12 +408,9 @@ class Safari_bot:
                 elif 't' in available_actions and 'tracker' in member\
                      and member not in self.trips[code]['injured']:
                     action='track'
-                ## Help injured players (always) or if not injured help injured NPCs
-                elif injured_players or (self.trips[code]['injured'] and member not in self.trips[code]['injured']):
+                ## Help injured party members
+                elif self.trips[code]['injured']:
                     action='heal'
-                ## Else rest if injured
-                elif member in self.trips[code]['injured']:
-                    action='rest'
                 ## Else try to prolong trip
                 else:
                     action='forage'
@@ -389,7 +420,7 @@ class Safari_bot:
 
     ## Main skill check formula (Gompertz)
     def do_check(self,difficulty,skill,t):
-        if t=='Firepower':
+        if t=='fight':
             p=3
         else:
             p=2
@@ -549,7 +580,7 @@ class Safari_bot:
             elif sender in self.hunters:
                 ## Do trip event commands with event check
                 if self.hunters[sender]['trip'] and message.split('!')[-1] in\
-                   ['fight','hide','survive','track','heal','rest','forage']:
+                   ['fight','hide','survive','track','heal','forage']:
                     command=message.split('!')[-1]
                     if command in self.list_commands(sender):
                         self.trip_step(sender,command)
