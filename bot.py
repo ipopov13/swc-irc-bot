@@ -188,7 +188,8 @@ class Safari_bot:
         return code
 
     def relay_event(self,hunter,event_num,resolve=False,resolve_only=False):
-        ## Add tracking event check here to accomodate all creatures!
+        ## Add game tracking event check here to accomodate all creatures!
+        ## (when the direct confrontation check fails)
         pass
         if not resolve_only:
             self.irc.send("PRIVMSG %s :-  Hunting %ss on %s: DAY %d\n"
@@ -295,8 +296,8 @@ class Safari_bot:
         for member in self.trips[code]['actions']:
             party_actions[self.trips[code]['actions'][member]].append(self.trips[code]['properties'][member][self.properties.index(action_skills[self.trips[code]['actions'][member]])])
         party_actions['fight']=sum(party_actions['fight'])
-        party_actions['hide']=sum(party_actions['hide'])/float(len(party_actions['hide']))
-        party_actions['survive']=sum(party_actions['survive'])/float(len(party_actions['survive']))
+        party_actions['hide']=sum(party_actions['hide'])/max([1,float(len(party_actions['hide']))])
+        party_actions['survive']=sum(party_actions['survive'])/max([1,float(len(party_actions['survive']))])
         party_actions['heal']=max(party_actions['heal'])+len(party_actions['heal'])-1
         party_actions['track']=max(party_actions['track'])+len(party_actions['track'])-1
         party_actions['forage']=sum(party_actions['forage'])/100.
@@ -306,11 +307,32 @@ class Safari_bot:
         else:
             difficulty=self.destinations['destination'][self.trips[code]['destination']]['difficulty']
         ## Do checks and determine resolve tag in sequence of danger
-        ## fight->survive->hide->track|heal|forage
-        for action in ['fight','survive','hide']:
-            if party_actions[action]:
-                if random.random()<self.do_check(self.difficulties[action][difficulty],party_actions[action],action):
-                    
+        ## Injure groups (last ones are always included if in danger):
+        ## fight->survive|hide->track|heal|forage
+        injure_group=[]
+        resolve_tag=[]
+        if party_actions['fight']:
+            if random.random()<self.do_check(self.difficulties['fight'][difficulty],party_actions['fight'],'fight'):
+                resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@f')
+            else:
+                resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@f')
+                injure_group.append('fight')
+        else:
+            for action in ['survive','hide']:
+                if party_actions[action]:
+                    if random.random()<self.do_check(self.difficulties[action][difficulty],party_actions[action],action):
+                        resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@%s' %(action[0]))
+                    else:
+                        resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@%s' %(action[0]))
+                        injure_group.append(action)
+        if party_actions['track']:
+            if injure_group:
+                injure_group.append('track')
+            if random.random()<self.do_check(self.difficulties['track'][difficulty],party_actions['track'],'track'):
+                resolve_tag.append('track_success')
+                self.trips[code]['tracked'][event.split('_')[0]]=self.trips[code]['tracked'].get(event.split('_')[0],0)+1
+        if party_actions['heal']:
+        ## MULTIPLE RESOLVE TAGS!!!
         ## Register resolve tag
         self.trips[code]['resolves'].append(resolve_tag)
         ## Deal injuries to respective action group that failed
@@ -364,7 +386,7 @@ class Safari_bot:
                 possible+=[event]*5
             ## Add game(+3)/other events based on current terrain (/2 if no match)
             elif event.split('_')[0] in self.dest_games[self.destinations['destination'][self.trips[code]['destination']]['name']]:
-                possible+=[event]*(self.game_freqs[event.split('_')[0]]['frequency']+self.trips[code]['tracked'].get(event.split('_')[0],0))/(1 if event.split('_')[0] in self.terr_games[self.trips[code]['current_terrain']] else 2)
+                possible+=[event]*((self.game_freqs[event.split('_')[0]]['frequency']+self.trips[code]['tracked'].get(event.split('_')[0],0))/(1 if event.split('_')[0] in self.terr_games[self.trips[code]['current_terrain']] else 2))
                 games.append(event)
                 if event.split('_')[0]==self.destinations['game'][self.trips[code]['game']]['name']:
                     possible+=[event]*3
