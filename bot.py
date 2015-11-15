@@ -198,9 +198,19 @@ class Safari_bot:
                             event_num))
             self.relay_content(hunter,self.trips[self.hunters[hunter]['trip']]['events'][event_num])
         ## Relay actions/talk since current event here!!!
+        ## or maybe do them as parts of the resolve? see below
         pass
+        ## Possible resolves are:
+        ## _success_@A (per 'A'ction)-in content
+        ## _fail_@A (per 'A'ction)-in content
+        ## track_success (generic)-in content
+        ## track_fail (generic)-in content
+        ## healed_%playername -> Needs check!
+        ## injured_%playername -> Needs check!
+        ## finished_%playername -> Needs check!
         if resolve or resolve_only:
-            self.relay_content(hunter,self.trips[self.hunters[hunter]['trip']]['resolves'][event_num])
+            for res in self.trips[self.hunters[hunter]['trip']]['resolves'][event_num]:
+                self.relay_content(hunter,res)
 
     ## Give commands for current trip step
     ## Commands are: (h)ide, (f)ight, (t)rack, (s)urvive, heal, forage
@@ -284,7 +294,7 @@ class Safari_bot:
     def resolve_event(self,code):
         ## Begin event chain
         if self.trips[code]['events'][-1].endswith('_arrival'):
-            self.trips[code]['resolves'].append(self.trips[code]['events'][-1].replace('_arrival','_start'))
+            self.trips[code]['resolves'].append([self.trips[code]['events'][-1].replace('_arrival','_start')])
             return 0
         ## Calculate party action stats
         ## fight-sum; hide-average; survive-average
@@ -302,7 +312,9 @@ class Safari_bot:
         party_actions['track']=max(party_actions['track'])+len(party_actions['track'])-1
         party_actions['forage']=sum(party_actions['forage'])/100.
         ## Determine difficulty
+        is_game=0
         if event.split('_')[0].lower() in self.gamelist:
+            is_game=1
             difficulty=self.destinations['game'][self.gamelist.index(event.split('_')[0].lower())+1]['difficulty']
         else:
             difficulty=self.destinations['destination'][self.trips[code]['destination']]['difficulty']
@@ -310,47 +322,79 @@ class Safari_bot:
         ## Injure groups (last ones are always included if in danger):
         ## fight->survive|hide->track|heal|forage
         injure_group=[]
-        resolve_tag=[]
+        resolve_tags=[]
+        success=0
+        ## Either a fight or a hide/survive resolve is done for the event
         if party_actions['fight']:
             if random.random()<self.do_check(self.difficulties['fight'][difficulty],party_actions['fight'],'fight'):
-                resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@f')
+                resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@f')
+                success=1
             else:
-                resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@f')
+                resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@f')
                 injure_group.append('fight')
         else:
             for action in ['survive','hide']:
                 if party_actions[action]:
                     if random.random()<self.do_check(self.difficulties[action][difficulty],party_actions[action],action):
-                        resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@%s' %(action[0]))
+                        resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@%s' %(action[0]))
+                        success=1
                     else:
-                        resolve_tag.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@%s' %(action[0]))
+                        resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@%s' %(action[0]))
                         injure_group.append(action)
         if party_actions['track']:
             if injure_group:
                 injure_group.append('track')
             if random.random()<self.do_check(self.difficulties['track'][difficulty],party_actions['track'],'track'):
-                resolve_tag.append('track_success')
+                resolve_tags.append('track_success')
                 self.trips[code]['tracked'][event.split('_')[0]]=self.trips[code]['tracked'].get(event.split('_')[0],0)+1
+            else:
+                resolve_tags.append('track_fail')
         if party_actions['heal']:
-        ## MULTIPLE RESOLVE TAGS!!!
+            if injure_group:
+                injure_group.append('heal')
+            for injured in self.trips[code]['injured'][:]:
+                ## Heal uses the tracking difficulties!
+                if random.random()<self.do_check(self.difficulties['track'][difficulty],party_actions['heal'],'heal'):
+                    self.trips[code]['injured'].remove(injured)
+                    resolve_tags.append('healed_%s' %(injured))
+        if injure_group and party_actions['forage']:
+            injure_group.append('forage')
+        ## Deal injuries to respective action groups
+        in_danger=[]
+        for member in self.trips[code]['actions']:
+            if self.trips[code]['actions'][member] in injure_group:
+                in_danger.append(member)
+        if in_danger:
+            hit=random.choice(in_danger)
+            if random.random()>=self.do_check(self.difficulties['survive'][difficulty],self.trips[code]['properties'][hit][self.properties.index('Resilience')],'survive'):
+                self.trips[code]['injured'].append(hit)
+                resolve_tags.append('injured_%s' %(hit))
+        ## Give out XP rewards if selected game has been beaten, end trip if organized game found
+        if is_game and success:
+            game_num=self.gamelist.index(event.split('_')[0])+1
+            for member in self.trips[code]['party']:
+                if ' ' not in member:
+                    if self.hunters[member]['selected']['game']==game_num:
+                        if event.split('_')[0].lower() not in self.hunters[member]['hunted_game']:
+                            self.hunters[member]['xp']+=1
+                            self.hunters[member]['hunted_game'].append(event.split('_')[0].lower())
+                        self.trips[code]['finished'].append(member)
+                        resolve_tags.append('finished_%s' %(member))
+            if len(self.trips[code]['finished'])==len(self.trips[code]['party'])-self.trips[code]['back-up']:
+                self.trips[code]['events'].append('ended_game')
         ## Register resolve tag
-        self.trips[code]['resolves'].append(resolve_tag)
-        ## Deal injuries to respective action group that failed
-        pass
-        ## Give out XP rewards here
-        pass
-        ## If event fails add injuries in trip
+        self.trips[code]['resolves'].append(resolve_tags)
         ## If double injury - add hunter injury and end trip
-        pass
-        ## Lower supplies
-        supply_chance=.2*len(self.trips[code]['party'])-party_actions['forage']
+        for member in self.trips[code]['injured']:
+            if self.trips[code]['injured'].count(member)==2:
+                self.hunters[member]['injured_on']=time.time()
+                self.trips[code]['events'].append('ended_injury')
+        ## Lower supplies and end if <=0
+        supply_chance=.2*len(self.trips[code]['party'])-2*party_actions['forage']
         if random.random()<supply_chance:
             self.trips[code]['supplies']-=1
-        ## Check if trip ends here due to injuries/supply shortage/game caught
-        ## content tags: ended_supplies/ended_injury/organized_game/random_game
-        if self.trips[code]['supplies']<=0:
-            self.trips[code]['events'].append('ended_supplies')
-        pass
+            if self.trips[code]['supplies']<=0:
+                self.trips[code]['events'].append('ended_supplies')
 
     ## Hunter has reached a trip ending
     def return_hunter(self,hunter):
@@ -373,6 +417,7 @@ class Safari_bot:
     ## with @ and are listed at the end with a single letter. Actions are:
     ## (h)ide, (f)ight, (t)rack, (s)urvive
     ## (heal and forage are implied whenever h/f/s are not available!)
+    ## Game events are "name_event_encounter@..." and renamed to "name_event_tracking@t" if check is failed
     def select_event(self,code):
         possible=[]
         games=[]
@@ -384,7 +429,7 @@ class Safari_bot:
             if event.split('_')[0]==self.destinations['destination'][self.trips[code]['destination']]['name'] or\
                event.split('_')[0]==self.trips[code]['current_terrain']:
                 possible+=[event]*5
-            ## Add game(+3)/other events based on current terrain (/2 if no match)
+            ## Add game(+3)/other events based on current planet&terrain (/2 if no match)
             elif event.split('_')[0] in self.dest_games[self.destinations['destination'][self.trips[code]['destination']]['name']]:
                 possible+=[event]*((self.game_freqs[event.split('_')[0]]['frequency']+self.trips[code]['tracked'].get(event.split('_')[0],0))/(1 if event.split('_')[0] in self.terr_games[self.trips[code]['current_terrain']] else 2))
                 games.append(event)
@@ -554,23 +599,23 @@ class Safari_bot:
                         ## Generate trip
                         if self.orders[args[0]]['organized']:
                             self.trips[code]={'force':force,'party':[],'events':[destname+'_arrival'],
-                                              'resolves':[],'states':{},'injured':{},
+                                              'resolves':[],'states':{},'injured':[],
                                               'destination':destination,'game':game,
                                               'size':self.orders[args[0]]['organized'],
                                               'back-up':self.orders[args[0]]['back-up'],
                                               'started_on':0,'actions':{},'properties':{},
                                               'supplies':0,'terrains':self.destinations['destination'][destination]['terrains'].split('/'),
                                               'current_terrain':self.destinations['game'][game]['terrains'].split('/')[0],
-                                              'tracked':{}}
+                                              'tracked':{},'finished':[]}
                         elif 'random%d' %(destination) not in self.trips:
                             self.trips['random%d' %(destination)]={'force':0,'party':[],'events':[destname+'_arrival'],
-                                              'resolves':[],'states':{},'injured':{},
+                                              'resolves':[],'states':{},'injured':[],
                                               'destination':destination,'game':0,
                                               'size':int(self.destinations['destination'][destination]['difficulty']),
                                               'back-up':True,'started_on':0,'actions':{},'properties':{},
                                               'supplies':0,'terrains':self.destinations['destination'][destination]['terrains'].split('/'),
                                               'current_terrain':random.choice(self.destinations['destination'][destination]['terrains'].split('/')),
-                                              'tracked':{}}
+                                              'tracked':{},'finished':[]}
                         ## Set destination and game for the buyer to remove confusion
                         self.hunters[args[0]]['selected']['destination']=self.destlist.index(args[1].lower())+1
                         self.hunters[args[0]]['selected']['game']=self.gamelist.index(args[2].lower())+1
@@ -587,7 +632,7 @@ class Safari_bot:
                 else:
                     self.hunters[sender]={'equipment':{'weapons':0,'tools':0,'suits':0},'trip':0,
                                      'selected':{'destination':0,'game':0},'injured_on':0,
-                                     'exp':0}
+                                     'xp':0,'hunted_game':[]}
                     ## Save new hunters immediately to preserve information in case of bugs
                     self.refresh_hunters()
                     self.relay_content(sender,'registered')
