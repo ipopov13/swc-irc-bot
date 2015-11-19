@@ -1,3 +1,7 @@
+game_track_fail:-(generic tracking failure)
+eye-snatcher_event_encounter@h:-(real game encounter with specific challenges)
+eye-snatcher_game_tracking@t:-(flavoured tracking event if encounter check fails)
+
 ended_supplies:-      Unfortunately your group's supplies have reached a critical level
 ended_supplies:-  and you are forced to turn back. You should prepare better next time!
 
@@ -7,7 +11,9 @@ ended_injury:-  trip! The guide calls a rescue craft that takes you off the plan
 ended_game:-      You have successfuly hunted your selected game! You spend the night
 ended_game:-  resting and head to the extraction point the next morning.
 
-ended_random_game:-      {hunter} has successfuly hunted their selected game!
+healed_player:-      {hunter}'s injuries have been healed!
+injured_player:-      {hunter} has been injured!
+finished_player:-      {hunter} has successfuly hunted their selected game!
 
 Ithor_arrival:-      The sight of the bright green and blue streaks of jungles and rivers
 Ithor_arrival:-  below are by themselves something worth the trouble of getting a visa.

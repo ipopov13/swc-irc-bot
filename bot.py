@@ -56,10 +56,10 @@ class Safari_bot:
         print "connecting to:"+self.server
         self.irc.connect((self.server,6667))
 
-    def relay_content(self,sender,code):
+    def relay_content(self,sender,code,formatting):
         code=str(code)
         for l in self.content[code]:
-            self.irc.send("PRIVMSG %s :%s" %(sender,l))
+            self.irc.send("PRIVMSG {sender} :{line}".format(sender=sender,line=l,**formatting))
 
     def load_hunters(self):
         ## Load known characters or create empty file
@@ -188,9 +188,6 @@ class Safari_bot:
         return code
 
     def relay_event(self,hunter,event_num,resolve=False,resolve_only=False):
-        ## Add game tracking event check here to accomodate all creatures!
-        ## (when the direct confrontation check fails)
-        pass
         if not resolve_only:
             self.irc.send("PRIVMSG %s :-  Hunting %ss on %s: DAY %d\n"
                           %(hunter,self.destinations['game'][self.hunters[hunter]['selected']['game']]['name'].lower(),
@@ -203,13 +200,14 @@ class Safari_bot:
         ## Possible resolves are:
         ## _success_@A (per 'A'ction)-in content
         ## _fail_@A (per 'A'ction)-in content
-        ## track_success (generic)-in content
-        ## track_fail (generic)-in content
+        ## game_track_fail (generic)-in content
         ## healed_%playername -> Needs check!
         ## injured_%playername -> Needs check!
         ## finished_%playername -> Needs check!
         if resolve or resolve_only:
             for res in self.trips[self.hunters[hunter]['trip']]['resolves'][event_num]:
+                if res.split('_')[0] in ['healed','injured','finished']:
+                    self.relay_content(hunter,res.split('_')[0]+'_player',{'hunter':res.split('_')[1]})
                 self.relay_content(hunter,res)
 
     ## Give commands for current trip step
@@ -292,9 +290,10 @@ class Safari_bot:
                 self.orders[member]['code']=new_trip
 
     def resolve_event(self,code):
+        event=self.trips[code]['events'][-1]
         ## Begin event chain
-        if self.trips[code]['events'][-1].endswith('_arrival'):
-            self.trips[code]['resolves'].append([self.trips[code]['events'][-1].replace('_arrival','_start')])
+        if event.endswith('_arrival'):
+            self.trips[code]['resolves'].append([event.replace('_arrival','_start')])
             return 0
         ## Calculate party action stats
         ## fight-sum; hide-average; survive-average
@@ -327,28 +326,42 @@ class Safari_bot:
         ## Either a fight or a hide/survive resolve is done for the event
         if party_actions['fight']:
             if random.random()<self.do_check(self.difficulties['fight'][difficulty],party_actions['fight'],'fight'):
-                resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@f')
+                resolve_tags.append(event.replace('_event_','_success_').split('@')[0]+'@f')
                 success=1
             else:
-                resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@f')
+                resolve_tags.append(event.replace('_event_','_fail_').split('@')[0]+'@f')
                 injure_group.append('fight')
         else:
             for action in ['survive','hide']:
                 if party_actions[action]:
                     if random.random()<self.do_check(self.difficulties[action][difficulty],party_actions[action],action):
-                        resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_success_').split('@')[0]+'@%s' %(action[0]))
+                        resolve_tags.append(event.replace('_event_','_success_').split('@')[0]+'@%s' %(action[0]))
                         success=1
                     else:
-                        resolve_tags.append(self.trips[code]['events'][-1].replace('_event_','_fail_').split('@')[0]+'@%s' %(action[0]))
+                        resolve_tags.append(event.replace('_event_','_fail_').split('@')[0]+'@%s' %(action[0]))
                         injure_group.append(action)
         if party_actions['track']:
             if injure_group:
                 injure_group.append('track')
             if random.random()<self.do_check(self.difficulties['track'][difficulty],party_actions['track'],'track'):
-                resolve_tags.append('track_success')
-                self.trips[code]['tracked'][event.split('_')[0]]=self.trips[code]['tracked'].get(event.split('_')[0],0)+1
+                ## Success in non-game event with tracking
+                if '_event_' in event:
+                    resolve_tags.append(event.replace('_event_','_success_').split('@')[0]+'@t')
+                ## Game tracking event
+                elif '_game_' in event:
+                    resolve_tags.append(event.replace('_game_','_success_').split('@')[0]+'@t')
+                    self.trips[code]['tracked'][event.split('_')[0]]=self.trips[code]['tracked'].get(event.split('_')[0],0)+1
+                else:
+                    print "What the hell is this tracking event??? (non-event/non-game):"
+                    print event
+                    raise TypeError
             else:
-                resolve_tags.append('track_fail')
+                ## Failure in non-game event with tracking
+                if '_event_' in event:
+                    resolve_tags.append(event.replace('_event_','_fail_').split('@')[0]+'@t')
+                ## Generic game tracking fail
+                elif '_game_' in event:
+                    resolve_tags.append('game_track_fail')
         if party_actions['heal']:
             if injure_group:
                 injure_group.append('heal')
@@ -374,7 +387,7 @@ class Safari_bot:
             game_num=self.gamelist.index(event.split('_')[0])+1
             for member in self.trips[code]['party']:
                 if ' ' not in member:
-                    if self.hunters[member]['selected']['game']==game_num:
+                    if self.hunters[member]['selected']['game']==game_num and member not in self.trips[code]['finished']:
                         if event.split('_')[0].lower() not in self.hunters[member]['hunted_game']:
                             self.hunters[member]['xp']+=1
                             self.hunters[member]['hunted_game'].append(event.split('_')[0].lower())
@@ -417,7 +430,9 @@ class Safari_bot:
     ## with @ and are listed at the end with a single letter. Actions are:
     ## (h)ide, (f)ight, (t)rack, (s)urvive
     ## (heal and forage are implied whenever h/f/s are not available!)
-    ## Game events are "name_event_encounter@..." and renamed to "name_event_tracking@t" if check is failed
+    ## Game events are "%name_event_encounter@..." and renamed to
+    ## "%name_game_tracking@t" if check is failed ("_game_" so they do not
+    ## change the game frequency!)
     def select_event(self,code):
         possible=[]
         games=[]
@@ -445,7 +460,7 @@ class Safari_bot:
         ## make a dummy tracking event that changes the "tracked" trip property
         if event in games:
             if random.randint(1,10)>self.game_freqs[event.split('_')[0]]['frequency']+self.trips[code]['tracked'].get(event.split('_')[0],0):
-                event='%s_event_tracking@t' %(event.split('_')[0])
+                event='%s_game_tracking@t' %(event.split('_')[0])
         self.trips[code]['events'].append(event)
         ## Check to see if terrain has changed here, organized trips have a low
         ## chance to go to a non-game terrain and high chance to go back to a
